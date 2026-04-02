@@ -1,0 +1,199 @@
+Comment installer Proxmox ?
+-> IP de Proxmox = 192.168.1.60
+
+CHAPITRE 1 : Installation de Proxmox :
+
+⚠️ Ce qu'il faut avoir avant de commencer
+
+Il faut une clé USB d'au moins 2GB (son contenu sera effacé)
+Un autre PC ou téléphone pour télécharger l'ISO
+Savoir si tu veux installer Proxmox à la place de ton OS actuel ou sur une machine dédiée
+
+Étape 1 — Télécharger l'ISO Proxmox
+Va sur un pc (autre que celui ou tu veux mettre proxmox) et va sur proxmox.com/downloads et télécharge Proxmox VE (la dernière version) sur une USB.
+
+Étape 2 — Créer la clé USB bootable
+Tu as besoin d'un outil pour "graver" l'ISO sur la clé USB, voici ce que je te conseille d'utiliser en fonction de ton OS:
+
+Windows → utilise Rufus (rufus.ie), c'est le plus simple
+Linux → commande dd ou Balena Etcher
+Mac → Balena Etcher
+
+Dans Rufus :
+
+Sélectionne ta clé USB
+Sélectionne l'ISO Proxmox
+Clique sur Start et attends
+
+Étape 3 — Booter sur la clé USB
+Après démarres le pc en branchant la clé USB dessus.
+Spammes la touche echap pour accéder au menu du bios.
+Dans ton startup menu (BIOS/UEFI), tu dois voir une liste de périphériques de démarrage. Cherche quelque chose comme :
+USB Drive - [nom de ta clé]
+Sélectionne-le et appuie sur Entrée.
+
+Étape 4 — Installer Proxmox
+L'installateur graphique va se lancer. Les étapes sont :
+
+Install Proxmox VE → Entrée
+Accepter la licence
+Choisir le disque où installer → fais attention, ça va tout effacer sur ce disque
+Pays et timezone → France, Europe/Paris
+Mot de passe root et une adresse email
+Configuration réseau → là c'est important :
+
+Il va détecter ta carte réseau automatiquement
+Il va suggérer une IP — note-la bien, c'est par elle que tu accèdes à Proxmox
+
+Install → attend 5-10 minutes
+Reboot → retire la clé USB
+
+
+Étape 5 — Accéder à l'interface Proxmox
+Depuis n'importe quel navigateur sur ton réseau local :
+https://192.168.X.X:8006
+Avec l'IP notée à l'étape 6. Connecte-toi avec root et le mot de passe que tu as choisi.
+
+Étape 6 : profites de ton serveur Proxmox !
+-> C'est génial, tu peux profiter de Proxmox !!!!!
+
+-------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------
+
+
+CHAPITRE 2 : Commandes utiles dans le shell Proxmox
+Bienvenue dans le shell ! Voici les commandes essentielles pour explorer et tester ton installation.
+
+---
+
+## 🖥️ Vérifier que Proxmox tourne bien
+
+```bash
+# Version de Proxmox installée
+pveversion
+
+# État de tous les services Proxmox
+systemctl status pve-cluster
+systemctl status pvedaemon
+systemctl status pveproxy
+
+# Voir les ressources (CPU, RAM, disque)
+htop
+
+# Infos sur le matériel
+lscpu        # CPU
+free -h      # RAM
+df -h        # Disque
+lsblk        # Tous les disques/partitions
+```
+
+---
+
+## 🌐 Vérifier le réseau
+
+```bash
+# Voir ton IP
+ip a
+
+# Tester la connexion internet
+ping -c 4 google.com
+
+# Voir la passerelle (ta box)
+ip route
+
+# Voir le hostname
+hostname
+```
+
+---
+
+## 🔍 Explorer Proxmox depuis le shell
+
+```bash
+# Lister les VMs et LXC existants
+qm list       # VMs
+pct list      # Conteneurs LXC
+
+# Voir les noeuds du cluster
+pvecm status
+
+# Voir le stockage disponible
+pvesm status
+```
+
+---
+
+## ✅ Le test le plus important maintenant
+
+Depuis un **autre appareil sur ton réseau**, ouvre un navigateur et tape :
+
+```
+https://TON_IP:8006
+```
+
+Remplace `TON_IP` par ce que te donne `ip a` — tu devrais voir l'interface web de Proxmox. C'est de là que tu vas tout gérer ensuite.
+
+---
+
+-------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------
+CHAPITRE 3 : Les choses que nous allons pouvoir créer mtn :
+
+VM ou LXC — quelle différence pour toi ?
+Pour la plupart de tes services, tu n'as pas besoin d'une VM complète. Un LXC suffit et c'est bien plus léger.
+
+Ubuntu vs Debian ?
+Pour des serveurs et conteneurs → Debian 12. Plus léger, plus stable.
+Ubuntu c'est bien pour un desktop (interface graphique, usage quotidien). Pour héberger des services, Debian est la référence.
+
+🏆 Top 5 des machines à monter sur Proxmox
+Voici ce que je te conseille, dans l'ordre logique pour progresser :
+1. 🌐 Site web vitrine (LXC Debian 12)
+Nginx + tes fichiers HTML
+C'est ton projet principal, commence par là. Simple, tu apprends les bases du réseau et du LXC.
+
+2. 🗄️ NAS avec TrueNAS (VM)
+Stockage centralisé pour tous tes fichiers
+Là oui, une VM est justifiée car TrueNAS a besoin de son propre noyau et d'un accès direct aux disques. Tu pourras accéder à tes fichiers depuis n'importe quel appareil de ton réseau.
+
+3. 🔒 VPN Wireguard (LXC Debian 12)
+Accéder à ton réseau depuis n'importe où
+Super utile — depuis ton téléphone ou un autre PC, tu te connectes à ton réseau comme si tu étais chez toi. Tu peux gérer ton Proxmox à distance en sécurité.
+
+4. 📊 Monitoring avec Uptime Kuma (LXC Debian 12)
+Surveiller que tes services tournent
+Un dashboard qui te ping si ton site ou un service tombe. Très simple à installer, très satisfaisant à voir tourner.
+
+5. 🛡️ Pare-feu pfSense ou OPNsense (VM)
+Contrôler tout le trafic réseau
+Plus avancé, mais hyper formateur pour la cybersécurité. Tu remplaces ta box comme routeur principal et tu as le contrôle total sur ton réseau. Parfait pour ton profil.
+
+-------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------
+
+
+LXC vs VM
+Ce sont deux approches de virtualisation, mais à des niveaux différents.
+
+VM (Machine Virtuelle)
+Une VM émule un ordinateur complet, avec son propre noyau (kernel) et son propre matériel virtuel (CPU, RAM, disque, carte réseau...).
+
+Repose sur un hyperviseur (VMware, VirtualBox, KVM, Hyper-V...)
+Chaque VM a son propre OS complet (kernel inclus)
+Isolation forte : une VM crashée n'affecte pas l'hôte
+Lourd : démarre en secondes/minutes, consomme plus de RAM et disque
+
+
+LXC (Linux Container)
+Un LXC partage le kernel de l'hôte et isole seulement l'espace utilisateur (processus, réseau, système de fichiers...).
+
+Repose sur des fonctionnalités Linux : cgroups + namespaces
+Pas de kernel propre — il utilise celui de l'hôte
+Isolation plus légère : si le kernel hôte crashe, tout tombe
+Léger : démarre en millisecondes, overhead minimal
