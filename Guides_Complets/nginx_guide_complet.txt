@@ -1,0 +1,973 @@
+================================================================================
+                        NGINX — GUIDE COMPLET
+              Architecture, Configuration, Usages pratiques sur Debian
+================================================================================
+
+Écrit pour quelqu'un qui veut vraiment comprendre comment ça marche,
+pas juste copier-coller des commandes.
+
+================================================================================
+SOMMAIRE
+================================================================================
+
+  1.  Qu'est-ce que Nginx et pourquoi ça existe
+  2.  Comment Nginx fonctionne en interne (architecture)
+  3.  Installation sur Debian
+  4.  Structure des fichiers de configuration
+  5.  Syntaxe et concepts clés de la config
+  6.  Servir un site web statique
+  7.  Les virtual hosts (server blocks)
+  8.  Nginx comme reverse proxy
+  9.  Load balancing
+  10. HTTPS avec Let's Encrypt (Certbot)
+  11. Cache
+  12. Compression gzip
+  13. Sécurité et bonnes pratiques
+  14. Logs et debugging
+  15. Commandes essentielles
+  16. Ressources et documentation officielle
+
+================================================================================
+1. QU'EST-CE QUE NGINX ET POURQUOI ÇA EXISTE
+================================================================================
+
+Nginx (prononcé "engine-x") est né en 2004 de la main d'Igor Sysoev, un
+développeur russe qui travaillait pour le portail web Rambler. Son problème :
+Apache, le serveur web dominant à l'époque, ne passait pas à l'échelle au-delà
+de 10 000 connexions simultanées. Ce problème s'appelait le "C10K problem"
+(C pour Concurrent, 10K pour 10 000).
+
+Apache utilisait un modèle "une connexion = un processus (ou thread)". Avec
+10 000 connexions, ça faisait 10 000 processus en mémoire. L'OS passait son
+temps à switcher entre eux (context switching) et la mémoire explosait.
+
+Nginx a résolu ça avec une architecture radicalement différente :
+événementielle et asynchrone. Un seul processus peut gérer des milliers de
+connexions en même temps, sans bloquer, sans créer de nouveau thread.
+
+Aujourd'hui (2025) Nginx est le serveur web le plus utilisé au monde
+(environ 34% des sites), devant Apache. Il tourne derrière Netflix,
+Dropbox, GitHub, et des milliers d'autres.
+
+Ce que Nginx sait faire :
+  - Serveur web (fichiers statiques, HTML, CSS, JS, images)
+  - Reverse proxy (passer les requêtes à une app backend)
+  - Load balancer (répartir le trafic entre plusieurs serveurs)
+  - Cache HTTP
+  - Terminaison SSL/TLS
+  - Streaming vidéo (MP4, FLV)
+  - Proxy mail (IMAP, POP3, SMTP)
+
+Ce que Nginx ne fait PAS nativement :
+  - Exécuter du PHP, Python, Ruby directement
+    → Il passe la requête à PHP-FPM, Gunicorn, Puma, etc. via FastCGI ou proxy
+  - Gérer des bases de données
+  - Compiler du code
+
+================================================================================
+2. COMMENT NGINX FONCTIONNE EN INTERNE (ARCHITECTURE)
+================================================================================
+
+--- Le modèle Master / Worker ---
+
+Quand tu démarres Nginx, il crée deux types de processus :
+
+  [Master Process]
+      |
+      |--- [Worker Process 1]
+      |--- [Worker Process 2]
+      |--- [Worker Process 3]
+      |--- [Worker Process N]
+
+  Master Process :
+    - Tourne en root (pour pouvoir binder le port 80 et 443)
+    - Lit et valide la configuration
+    - Gère le cycle de vie des workers (les crée, les tue, les recharge)
+    - Ne traite AUCUNE requête client directement
+    - Reçoit les signaux système (reload, stop, etc.)
+
+  Worker Processes :
+    - Tournent sous un utilisateur non-privilégié (www-data sur Debian)
+    - Chacun gère des milliers de connexions en parallèle
+    - Chacun est single-threaded (pas de multi-threading interne)
+    - Nombre généralement = nombre de cœurs CPU (auto-detect avec "auto")
+    - Communiquent entre eux via de la mémoire partagée (pour le cache,
+      le rate limiting, etc.)
+
+--- Le modèle événementiel (Event-Driven) ---
+
+Voilà la vraie magie de Nginx. Chaque worker utilise ce qu'on appelle
+une "event loop" :
+
+  1. Le worker attend des événements réseau (nouvelle connexion, données
+     disponibles à lire, socket prête à écrire...)
+  2. Sur Linux, Nginx utilise epoll() — un mécanisme du kernel qui permet
+     de surveiller des milliers de file descriptors à la fois
+  3. Quand un événement arrive, Nginx le traite, puis retourne attendre
+
+Concrètement, si 5000 clients sont connectés mais que seulement 10 envoient
+des données à cet instant précis, Nginx ne "travaille" que pour ces 10.
+Les 4990 autres dorment dans l'event loop, sans consommer de CPU.
+
+Comparaison avec Apache (mode prefork) :
+  Apache avec 5000 connexions = 5000 processus en mémoire, tous actifs
+  Nginx avec 5000 connexions  = N workers (ex: 4), chacun gérant ~1250 conns
+
+Résultat : Nginx consomme 10 à 100 fois moins de mémoire qu'Apache
+sous charge.
+
+--- Gestion de la mémoire ---
+
+Nginx utilise des "memory pools" : des blocs de mémoire pré-alloués pour
+chaque requête. Quand la requête est terminée, tout le pool est libéré d'un
+coup. Pas de fragmentation mémoire, pas de malloc/free à chaque opération.
+
+Pour les fichiers statiques, Nginx utilise sendfile() : le kernel transfère
+directement le fichier du disque vers la socket réseau, sans passer par
+l'espace utilisateur. Zéro copie, performance maximale.
+
+================================================================================
+3. INSTALLATION SUR DEBIAN
+================================================================================
+
+--- Option 1 : Depuis les dépôts Debian (plus simple, légèrement en retard) ---
+
+  sudo apt update
+  sudo apt install nginx
+
+--- Option 2 : Depuis les dépôts officiels Nginx (recommandé en production) ---
+
+  # Installer les dépendances
+  sudo apt install curl gnupg2 ca-certificates lsb-release debian-archive-keyring
+
+  # Importer la clé GPG officielle de Nginx
+  curl https://nginx.org/keys/nginx_signing.key | gpg --dearmor \
+    | sudo tee /usr/share/keyrings/nginx-archive-keyring.gpg >/dev/null
+
+  # Ajouter le dépôt stable
+  echo "deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] \
+  http://nginx.org/packages/debian $(lsb_release -cs) nginx" \
+    | sudo tee /etc/apt/sources.list.d/nginx.list
+
+  # Installer
+  sudo apt update
+  sudo apt install nginx
+
+--- Vérification ---
+
+  nginx -v                    # affiche la version
+  sudo systemctl status nginx # vérifie que le service tourne
+  curl http://localhost        # doit afficher "Welcome to nginx!"
+
+--- Gérer le service ---
+
+  sudo systemctl start nginx    # démarrer
+  sudo systemctl stop nginx     # arrêter
+  sudo systemctl restart nginx  # redémarrer (coupe brièvement les connexions)
+  sudo systemctl reload nginx   # recharger la config SANS couper les connexions
+  sudo systemctl enable nginx   # démarrer automatiquement au boot
+  sudo systemctl disable nginx  # ne plus démarrer au boot
+
+================================================================================
+4. STRUCTURE DES FICHIERS DE CONFIGURATION
+================================================================================
+
+Sur Debian, voilà l'arborescence après installation :
+
+  /etc/nginx/
+  ├── nginx.conf                  ← fichier de config principal
+  ├── conf.d/                     ← dossier pour des configs supplémentaires
+  │   └── default.conf            ← site par défaut (si installé depuis nginx.org)
+  ├── sites-available/            ← configs des sites (désactivées par défaut)
+  │   └── default                 ← site par défaut Debian
+  ├── sites-enabled/              ← symlinks vers sites-available/ (sites actifs)
+  │   └── default                 ← ../sites-available/default
+  ├── snippets/                   ← morceaux de config réutilisables
+  │   ├── fastcgi-php.conf
+  │   └── snakeoil.conf
+  ├── mime.types                  ← associations extension → Content-Type
+  ├── modules-available/          ← modules disponibles
+  └── modules-enabled/            ← modules activés (symlinks)
+
+  /var/www/
+  └── html/
+      └── index.nginx-debian.html ← page d'accueil par défaut
+
+  /var/log/nginx/
+  ├── access.log                  ← toutes les requêtes
+  └── error.log                   ← erreurs
+
+  /run/nginx.pid                  ← PID du master process
+
+--- Le système sites-available / sites-enabled ---
+
+C'est une convention Debian (pas native à Nginx). Le principe :
+  - Tu crées ta config dans sites-available/
+  - Tu l'actives avec un symlink dans sites-enabled/
+  - Nginx lit tout ce qui est dans sites-enabled/
+
+Activer un site :
+  sudo ln -s /etc/nginx/sites-available/monsite /etc/nginx/sites-enabled/
+
+Désactiver un site :
+  sudo rm /etc/nginx/sites-enabled/monsite
+
+(La config dans sites-available/ reste intacte, elle est juste "débranchée")
+
+================================================================================
+5. SYNTAXE ET CONCEPTS CLÉS DE LA CONFIG
+================================================================================
+
+--- Structure générale ---
+
+La config Nginx est organisée en blocs imbriqués. Voici la hiérarchie :
+
+  # Contexte "main" (global) — directives qui s'appliquent à tout
+  worker_processes auto;
+  error_log /var/log/nginx/error.log;
+
+  events {
+      # Contexte "events" — gestion des connexions
+      worker_connections 1024;
+  }
+
+  http {
+      # Contexte "http" — tout ce qui concerne HTTP/HTTPS
+      include mime.types;
+
+      server {
+          # Contexte "server" — un virtual host
+          listen 80;
+          server_name exemple.com;
+
+          location / {
+              # Contexte "location" — une règle d'URL
+              root /var/www/html;
+          }
+      }
+  }
+
+--- Les directives ---
+
+Une directive = une instruction. Elle a un nom et une ou plusieurs valeurs,
+terminée par un point-virgule.
+
+  worker_processes 4;
+  access_log /var/log/nginx/access.log;
+  gzip on;
+
+Certaines directives prennent un bloc { } : ce sont des "block directives"
+(events, http, server, location...).
+
+--- Héritage des directives ---
+
+Une directive définie dans un contexte parent est héritée par les enfants,
+SAUF si l'enfant la redéfinit.
+
+  http {
+      gzip on;       # s'applique à tous les server blocks
+
+      server {
+          gzip off;  # écrase le "gzip on" pour CE server uniquement
+      }
+  }
+
+--- Le bloc "location" et son algorithme de matching ---
+
+C'est le cœur de la config. Nginx choisit quelle règle location appliquer
+selon des règles de priorité précises :
+
+  Syntaxe              Priorité    Description
+  ──────────────────────────────────────────────────────────────────
+  location = /exact    1 (max)     Correspondance exacte, arrêt immédiat
+  location ^~ /prefix  2           Commence par /prefix, pas de regex ensuite
+  location ~ regex      3           Regex case-sensitive
+  location ~* regex    3           Regex case-insensitive
+  location /prefix     4 (min)     Préfixe simple (le plus long gagne)
+
+Exemples :
+
+  location = / {
+      # UNIQUEMENT la racine exacte "/"
+  }
+
+  location /images/ {
+      # Toute URL commençant par /images/
+  }
+
+  location ~* \.(jpg|jpeg|png|gif|ico|css|js)$ {
+      # Toute URL finissant par ces extensions (insensible à la casse)
+      expires 30d;
+  }
+
+  location ~ \.php$ {
+      # URLs finissant par .php
+      fastcgi_pass unix:/run/php/php8.2-fpm.sock;
+  }
+
+--- Variables internes utiles ---
+
+  $host          → nom de domaine de la requête (ex: exemple.com)
+  $request_uri   → URI complète avec paramètres (ex: /page?id=42)
+  $uri           → URI sans paramètres (ex: /page)
+  $args          → paramètres de l'URL (ex: id=42)
+  $scheme        → http ou https
+  $remote_addr   → IP du client
+  $server_name   → server_name matchant
+  $http_upgrade  → valeur du header Upgrade (pour WebSockets)
+
+================================================================================
+6. SERVIR UN SITE WEB STATIQUE
+================================================================================
+
+Cas le plus simple : tu as un dossier avec des fichiers HTML/CSS/JS et tu
+veux les servir.
+
+  server {
+      listen 80;
+      server_name monsite.com www.monsite.com;
+
+      root /var/www/monsite;
+      index index.html index.htm;
+
+      location / {
+          try_files $uri $uri/ =404;
+      }
+
+      # Cache long pour les assets statiques
+      location ~* \.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2)$ {
+          expires 1y;
+          add_header Cache-Control "public, immutable";
+          access_log off;
+      }
+  }
+
+--- La directive try_files ---
+
+  try_files $uri $uri/ =404;
+
+Nginx va chercher dans l'ordre :
+  1. Le fichier exact correspondant à l'URI ($uri)
+  2. Un dossier du même nom + index ($uri/ → index.html dans ce dossier)
+  3. Retourner une 404
+
+Pour un SPA (React, Vue, Angular) qui gère lui-même le routing :
+
+  location / {
+      try_files $uri $uri/ /index.html;
+  }
+  # Si rien ne correspond, on sert index.html et c'est le router JS qui gère
+
+--- Créer le dossier et les droits ---
+
+  sudo mkdir -p /var/www/monsite
+  sudo chown -R www-data:www-data /var/www/monsite
+  sudo chmod -R 755 /var/www/monsite
+
+  # Créer un fichier de test
+  echo "<h1>Mon site fonctionne !</h1>" | sudo tee /var/www/monsite/index.html
+
+================================================================================
+7. LES VIRTUAL HOSTS (SERVER BLOCKS)
+================================================================================
+
+Un virtual host = un server block = la capacité à héberger plusieurs sites
+sur la même machine / même IP / même port.
+
+Nginx distingue les sites selon le header "Host" envoyé par le navigateur.
+
+--- Exemple : deux sites sur la même machine ---
+
+  # /etc/nginx/sites-available/site1.conf
+  server {
+      listen 80;
+      server_name site1.com www.site1.com;
+      root /var/www/site1;
+      index index.html;
+      location / { try_files $uri $uri/ =404; }
+  }
+
+  # /etc/nginx/sites-available/site2.conf
+  server {
+      listen 80;
+      server_name site2.com www.site2.com;
+      root /var/www/site2;
+      index index.html;
+      location / { try_files $uri $uri/ =404; }
+  }
+
+  # Activer les deux
+  sudo ln -s /etc/nginx/sites-available/site1.conf /etc/nginx/sites-enabled/
+  sudo ln -s /etc/nginx/sites-available/site2.conf /etc/nginx/sites-enabled/
+  sudo nginx -t     # tester la config
+  sudo systemctl reload nginx
+
+--- Le server block par défaut ---
+
+Si une requête arrive avec un Host qui ne correspond à aucun server_name,
+Nginx utilise le premier server block qui écoute sur ce port, OU celui
+marqué "default_server".
+
+  server {
+      listen 80 default_server;
+      server_name _;          # underscore = wildcard, accepte tout
+      return 444;             # ferme la connexion sans réponse (pratique
+                              # pour bloquer les scanners)
+  }
+
+================================================================================
+8. NGINX COMME REVERSE PROXY
+================================================================================
+
+C'est le cas d'usage le plus courant en production moderne. Nginx se place
+devant ton application (Node.js, Python/Django/Flask, PHP-FPM, Java...) et
+fait l'intermédiaire avec les clients.
+
+  Client → [Nginx:80/443] → [App Backend:3000/8000/8080...]
+
+Avantages :
+  - Nginx gère SSL, l'app n'a pas besoin de le gérer
+  - Nginx sert les fichiers statiques directement (plus rapide)
+  - L'app n'est jamais exposée directement sur Internet
+  - Nginx peut faire du rate limiting, de l'auth, du cache
+  - Tu peux redémarrer l'app sans couper Nginx
+
+--- Configuration de base ---
+
+  server {
+      listen 80;
+      server_name monapp.com;
+
+      location / {
+          proxy_pass http://127.0.0.1:3000;   # ton app écoute sur le port 3000
+
+          proxy_http_version 1.1;
+          proxy_set_header Host              $host;
+          proxy_set_header X-Real-IP         $remote_addr;
+          proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+          proxy_set_header Connection        "";   # efface "Connection: close"
+      }
+  }
+
+--- Pourquoi ces headers ? ---
+
+  proxy_http_version 1.1
+    → Utilise HTTP/1.1 (supporte keep-alive et WebSockets)
+    → Sans ça, Nginx utilise HTTP/1.0 qui ferme la connexion après chaque
+      requête → très mauvais pour les performances
+
+  proxy_set_header Host $host
+    → Passe le nom de domaine original à l'app
+    → Sans ça, l'app reçoit "127.0.0.1" comme hôte
+
+  proxy_set_header X-Real-IP $remote_addr
+    → Passe l'IP réelle du client à l'app
+    → L'app voit sinon toujours 127.0.0.1 (l'IP de Nginx)
+
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for
+    → Chaîne complète des IPs si plusieurs proxys en cascade
+
+  proxy_set_header X-Forwarded-Proto $scheme
+    → Indique à l'app si le client était en HTTP ou HTTPS
+    → Essentiel pour que l'app génère des redirects corrects
+
+  proxy_set_header Connection ""
+    → Efface le header Connection pour éviter que HTTP/1.0 "close" se
+      propage jusqu'au backend
+
+--- Proxy vers un socket Unix (meilleur pour PHP-FPM, etc.) ---
+
+  # Pour PHP-FPM
+  location ~ \.php$ {
+      fastcgi_pass unix:/run/php/php8.2-fpm.sock;
+      fastcgi_index index.php;
+      include fastcgi_params;
+      fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+  }
+
+  # Pour une app Python/Node via socket Unix
+  location / {
+      proxy_pass http://unix:/run/monapp/monapp.sock;
+  }
+
+--- WebSockets ---
+
+Si ton app utilise WebSockets (Socket.IO, etc.) :
+
+  location /ws/ {
+      proxy_pass http://127.0.0.1:3000;
+      proxy_http_version 1.1;
+      proxy_set_header Upgrade   $http_upgrade;
+      proxy_set_header Connection "upgrade";
+      proxy_set_header Host      $host;
+      proxy_read_timeout 86400;  # 24h — ne pas couper la connexion WS
+  }
+
+--- Timeouts du proxy ---
+
+  proxy_connect_timeout 10s;   # temps max pour établir la connexion au backend
+  proxy_send_timeout    30s;   # temps max pour envoyer la requête au backend
+  proxy_read_timeout    60s;   # temps max pour recevoir la réponse du backend
+
+Si ton backend est lent (génération de PDF, etc.), augmente proxy_read_timeout.
+
+================================================================================
+9. LOAD BALANCING
+================================================================================
+
+Nginx peut répartir le trafic entre plusieurs instances de ton application.
+
+--- Configuration ---
+
+  upstream mon_backend {
+      server 127.0.0.1:3000;
+      server 127.0.0.1:3001;
+      server 127.0.0.1:3002;
+  }
+
+  server {
+      listen 80;
+      server_name monapp.com;
+
+      location / {
+          proxy_pass http://mon_backend;
+          # + les headers proxy habituels
+      }
+  }
+
+--- Algorithmes de répartition ---
+
+  # Round-robin (par défaut) — chaque requête va au serveur suivant
+  upstream backend {
+      server 127.0.0.1:3000;
+      server 127.0.0.1:3001;
+  }
+
+  # Weighted — certains serveurs reçoivent plus de trafic
+  upstream backend {
+      server 127.0.0.1:3000 weight=3;  # reçoit 3x plus de trafic
+      server 127.0.0.1:3001 weight=1;
+  }
+
+  # Least connections — va vers le serveur avec le moins de connexions actives
+  upstream backend {
+      least_conn;
+      server 127.0.0.1:3000;
+      server 127.0.0.1:3001;
+  }
+
+  # IP hash — même IP = toujours même serveur (utile pour les sessions)
+  upstream backend {
+      ip_hash;
+      server 127.0.0.1:3000;
+      server 127.0.0.1:3001;
+  }
+
+--- Serveur de backup ---
+
+  upstream backend {
+      server 127.0.0.1:3000;
+      server 127.0.0.1:3001;
+      server 127.0.0.1:3002 backup;  # utilisé seulement si les deux autres tombent
+  }
+
+--- Health checks (version open source) ---
+
+  upstream backend {
+      server 127.0.0.1:3000 max_fails=3 fail_timeout=30s;
+      server 127.0.0.1:3001 max_fails=3 fail_timeout=30s;
+  }
+
+  # max_fails=3    → après 3 échecs consécutifs, marque le serveur comme down
+  # fail_timeout=30s → le serveur reste "down" pendant 30 secondes avant retry
+
+================================================================================
+10. HTTPS AVEC LET'S ENCRYPT (CERTBOT)
+================================================================================
+
+--- Installation de Certbot ---
+
+  sudo apt install certbot python3-certbot-nginx
+
+--- Obtenir et installer un certificat ---
+
+  sudo certbot --nginx -d monsite.com -d www.monsite.com
+
+Certbot va :
+  1. Vérifier que tu contrôles le domaine (challenge HTTP)
+  2. Générer un certificat signé par Let's Encrypt
+  3. Modifier automatiquement ta config Nginx pour activer HTTPS
+  4. Configurer le renouvellement automatique via systemd timer
+
+--- Ce que Certbot ajoute à ta config ---
+
+  server {
+      listen 443 ssl;
+      server_name monsite.com www.monsite.com;
+
+      ssl_certificate     /etc/letsencrypt/live/monsite.com/fullchain.pem;
+      ssl_certificate_key /etc/letsencrypt/live/monsite.com/privkey.pem;
+      include /etc/letsencrypt/options-ssl-nginx.conf;
+      ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+      # ... ta config ...
+  }
+
+  server {
+      listen 80;
+      server_name monsite.com www.monsite.com;
+      return 301 https://$host$request_uri;   # redirect HTTP → HTTPS
+  }
+
+--- Renouvellement automatique ---
+
+Les certificats Let's Encrypt expirent tous les 90 jours. Certbot installe
+automatiquement un timer systemd qui renouvelle avant expiration.
+
+Tester le renouvellement :
+  sudo certbot renew --dry-run
+
+Vérifier le timer :
+  sudo systemctl status certbot.timer
+
+--- Config SSL manuelle (si tu as ton propre certificat) ---
+
+  server {
+      listen 443 ssl;
+      server_name monsite.com;
+
+      ssl_certificate     /etc/ssl/certs/monsite.crt;
+      ssl_certificate_key /etc/ssl/private/monsite.key;
+
+      # Protocoles modernes uniquement (TLS 1.2 et 1.3)
+      ssl_protocols TLSv1.2 TLSv1.3;
+
+      # Ciphers recommandés (Mozilla Intermediate)
+      ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:
+                  ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384;
+
+      ssl_prefer_server_ciphers off;
+
+      # Cache des sessions SSL (améliore les performances)
+      ssl_session_cache shared:SSL:10m;
+      ssl_session_timeout 10m;
+
+      # HSTS — dit aux navigateurs de toujours utiliser HTTPS
+      add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+  }
+
+================================================================================
+11. CACHE
+================================================================================
+
+--- Cache de fichiers statiques (côté client) ---
+
+On demande au navigateur de mettre en cache les assets statiques :
+
+  location ~* \.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+      expires 1y;                              # expire dans 1 an
+      add_header Cache-Control "public, immutable";
+      add_header Vary Accept-Encoding;
+      access_log off;                          # pas de log pour les assets
+  }
+
+  location ~* \.(html|htm)$ {
+      expires 1h;                              # HTML change plus souvent
+      add_header Cache-Control "public, no-cache";
+  }
+
+--- Cache proxy (Nginx met en cache les réponses du backend) ---
+
+  # Déclarer la zone de cache (dans le bloc http)
+  http {
+      proxy_cache_path /var/cache/nginx
+                      levels=1:2
+                      keys_zone=mon_cache:10m
+                      max_size=1g
+                      inactive=60m
+                      use_temp_path=off;
+
+      server {
+          location / {
+              proxy_pass http://127.0.0.1:3000;
+
+              proxy_cache            mon_cache;
+              proxy_cache_valid      200 302  10m;  # cache les 200/302 pendant 10 min
+              proxy_cache_valid      404      1m;   # cache les 404 pendant 1 min
+              proxy_cache_use_stale  error timeout updating http_500;
+              proxy_cache_key        "$scheme$request_method$host$request_uri";
+
+              add_header X-Cache-Status $upstream_cache_status;  # debug
+          }
+      }
+  }
+
+  # $upstream_cache_status vaut :
+  #   HIT   → réponse servie depuis le cache
+  #   MISS  → pas dans le cache, requête envoyée au backend
+  #   BYPASS → cache bypassé
+  #   EXPIRED → était en cache mais expiré
+
+--- Bypasser le cache pour certaines requêtes ---
+
+  # Ne pas cacher les requêtes POST, ni les pages avec cookie de session
+  proxy_cache_bypass $cookie_session $http_pragma;
+  proxy_no_cache     $cookie_session $http_pragma;
+
+================================================================================
+12. COMPRESSION GZIP
+================================================================================
+
+La compression gzip réduit la taille des réponses (HTML, CSS, JS) de 60-80%.
+À activer absolument.
+
+  http {
+      gzip on;
+      gzip_vary on;                   # ajoute "Vary: Accept-Encoding" aux headers
+      gzip_proxied any;               # compresse même les réponses proxifiées
+      gzip_comp_level 6;              # niveau de compression (1=rapide, 9=max)
+                                      # 6 est le bon compromis CPU/taille
+      gzip_min_length 256;            # ne pas compresser les petits fichiers
+      gzip_types
+          text/plain
+          text/css
+          text/javascript
+          application/javascript
+          application/json
+          application/xml
+          image/svg+xml
+          font/woff
+          font/woff2;
+  }
+
+Note : ne jamais compresser les images JPEG/PNG/GIF/WebP — elles sont déjà
+compressées et ça ne ferait que consommer du CPU inutilement.
+
+================================================================================
+13. SÉCURITÉ ET BONNES PRATIQUES
+================================================================================
+
+--- Masquer la version de Nginx ---
+
+  http {
+      server_tokens off;    # cache la version dans les headers et pages d'erreur
+  }
+
+--- Headers de sécurité ---
+
+  server {
+      # Empêche le clickjacking
+      add_header X-Frame-Options "SAMEORIGIN" always;
+
+      # Empêche le MIME sniffing
+      add_header X-Content-Type-Options "nosniff" always;
+
+      # Active le filtre XSS du navigateur
+      add_header X-XSS-Protection "1; mode=block" always;
+
+      # Contrôle les infos envoyées dans Referer
+      add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+      # Content Security Policy (à adapter à ton app)
+      add_header Content-Security-Policy "default-src 'self'" always;
+  }
+
+--- Rate limiting (protéger contre les abus) ---
+
+  http {
+      # Définir une zone de rate limiting (basée sur l'IP)
+      limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
+      # 10m = 10 Mo de mémoire pour stocker les IPs (~160 000 IPs)
+      # rate=10r/s = max 10 requêtes par seconde par IP
+
+      server {
+          location /api/ {
+              limit_req zone=api burst=20 nodelay;
+              # burst=20 → autorise une rafale de 20 requêtes
+              # nodelay  → les 20 premières passent sans délai, puis limit
+              proxy_pass http://127.0.0.1:3000;
+          }
+      }
+  }
+
+--- Limiter la taille des uploads ---
+
+  http {
+      client_max_body_size 10m;     # max 10 Mo par requête (upload)
+  }
+
+--- Limiter les connexions par IP ---
+
+  http {
+      limit_conn_zone $binary_remote_addr zone=connexions:10m;
+
+      server {
+          limit_conn connexions 10;   # max 10 connexions simultanées par IP
+      }
+  }
+
+--- Bloquer les bots et scanners ---
+
+  server {
+      # Bloquer les requêtes sans Host header (scanners automatiques)
+      if ($host = "") { return 444; }
+
+      # Bloquer certains User-Agents
+      if ($http_user_agent ~* (sqlmap|nikto|nmap|masscan)) {
+          return 444;
+      }
+
+      # Bloquer l'accès aux fichiers cachés (.git, .env, etc.)
+      location ~ /\. {
+          deny all;
+          return 404;
+      }
+  }
+
+--- Firewall (UFW) ---
+
+  sudo ufw allow 'Nginx Full'   # ouvre 80 et 443
+  sudo ufw allow 'Nginx HTTP'   # ouvre seulement 80
+  sudo ufw allow 'Nginx HTTPS'  # ouvre seulement 443
+  sudo ufw enable
+  sudo ufw status
+
+================================================================================
+14. LOGS ET DEBUGGING
+================================================================================
+
+--- Format des logs ---
+
+  http {
+      log_format main '$remote_addr - $remote_user [$time_local] '
+                      '"$request" $status $body_bytes_sent '
+                      '"$http_referer" "$http_user_agent" '
+                      'rt=$request_time uct=$upstream_connect_time '
+                      'uht=$upstream_header_time urt=$upstream_response_time';
+
+      access_log /var/log/nginx/access.log main;
+  }
+
+  # rt  = temps total de traitement de la requête côté Nginx
+  # uct = temps pour établir la connexion au backend
+  # urt = temps que le backend a mis à répondre
+
+--- Lire les logs en temps réel ---
+
+  sudo tail -f /var/log/nginx/access.log   # toutes les requêtes
+  sudo tail -f /var/log/nginx/error.log    # erreurs
+
+--- Niveaux de log d'erreur ---
+
+  error_log /var/log/nginx/error.log warn;
+  # niveaux : debug | info | notice | warn | error | crit | alert | emerg
+  # "warn" est un bon compromis en production
+
+--- Désactiver les logs pour certaines requêtes ---
+
+  location = /favicon.ico { access_log off; }
+  location = /robots.txt  { access_log off; }
+  location ~* \.(css|js|png)$ { access_log off; }
+
+--- Tester la configuration ---
+
+  sudo nginx -t           # valide la config, affiche les erreurs
+  sudo nginx -T           # affiche toute la config après résolution des includes
+
+--- Débugger une 502 Bad Gateway ---
+
+  La 502 signifie que Nginx n'arrive pas à joindre le backend. Causes :
+  1. Le backend n'est pas lancé → sudo systemctl status monapp
+  2. Le backend écoute sur un mauvais port → vérifier proxy_pass
+  3. Le backend a planté → regarder ses propres logs
+  4. Socket Unix introuvable → vérifier le chemin du .sock
+
+--- Débugger une 504 Gateway Timeout ---
+
+  Le backend répond trop lentement. Solutions :
+  1. Augmenter proxy_read_timeout dans Nginx
+  2. Optimiser ton code backend
+
+--- Pages d'erreur personnalisées ---
+
+  server {
+      error_page 404             /erreurs/404.html;
+      error_page 500 502 503 504 /erreurs/50x.html;
+
+      location = /erreurs/404.html {
+          root /var/www/monsite;
+          internal;               # interdit l'accès direct depuis l'extérieur
+      }
+  }
+
+================================================================================
+15. COMMANDES ESSENTIELLES
+================================================================================
+
+  # Config et rechargement
+  sudo nginx -t                            # tester la configuration
+  sudo nginx -T                            # afficher la config complète
+  sudo systemctl reload nginx              # recharger sans couper les connexions
+  sudo systemctl restart nginx             # redémarrer
+
+  # Service
+  sudo systemctl start|stop|status nginx
+
+  # Logs
+  sudo tail -f /var/log/nginx/access.log
+  sudo tail -f /var/log/nginx/error.log
+  sudo journalctl -u nginx -f              # logs systemd en temps réel
+
+  # Activer/désactiver un site
+  sudo ln -s /etc/nginx/sites-available/monsite /etc/nginx/sites-enabled/
+  sudo rm /etc/nginx/sites-enabled/monsite
+
+  # Certbot
+  sudo certbot --nginx -d monsite.com      # obtenir un cert
+  sudo certbot renew --dry-run             # tester le renouvellement
+  sudo certbot certificates                # lister les certs installés
+
+  # Infos
+  nginx -v                                 # version
+  nginx -V                                 # version + modules compilés
+  ps aux | grep nginx                      # voir les processus Nginx
+
+================================================================================
+16. RESSOURCES ET DOCUMENTATION OFFICIELLE
+================================================================================
+
+Documentation officielle (référence absolue) :
+  https://nginx.org/en/docs/
+
+Guide du débutant (officiel, en anglais) :
+  https://nginx.org/en/docs/beginners_guide.html
+
+Référence complète des directives :
+  https://nginx.org/en/docs/dirindex.html
+
+Modules officiels (liste de tous les modules et directives) :
+  https://nginx.org/en/docs/ (section "Modules reference" en bas)
+
+Wiki communautaire :
+  https://www.nginx.com/resources/wiki/
+
+Générateur de config sécurisée (Mozilla) :
+  https://ssl-config.mozilla.org/
+  → Choisis "Nginx" + "Intermediate" pour une config SSL recommandée
+
+DigitalOcean Nginx tutorials (excellents, en anglais) :
+  https://www.digitalocean.com/community/tags/nginx
+
+Tester la sécurité SSL de ton serveur :
+  https://www.ssllabs.com/ssltest/
+
+Tutoriel Debian officiel pour Nginx :
+  https://wiki.debian.org/Nginx
+
+Repository GitHub officiel de Nginx (code source + README) :
+  https://github.com/nginx/nginx
+
+================================================================================
+FIN DU DOCUMENT
+================================================================================

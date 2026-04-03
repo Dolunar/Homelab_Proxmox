@@ -66,13 +66,9 @@ Avec l'IP notée à l'étape 6. Connecte-toi avec root et le mot de passe que tu
 CHAPITRE 2 : Commandes utiles dans le shell Proxmox
 Bienvenue dans le shell ! Voici les commandes essentielles pour explorer et tester ton installation.
 
----
-
 ## 🖥️ Vérifier que Proxmox tourne bien
 
-```bash
-# Version de Proxmox installée
-pveversion
+pveversion # Version de Proxmox installée
 
 # État de tous les services Proxmox
 systemctl status pve-cluster
@@ -87,13 +83,10 @@ lscpu        # CPU
 free -h      # RAM
 df -h        # Disque
 lsblk        # Tous les disques/partitions
-```
 
 ---
 
 ## 🌐 Vérifier le réseau
-
-```bash
 # Voir ton IP
 ip a
 
@@ -105,13 +98,11 @@ ip route
 
 # Voir le hostname
 hostname
-```
 
 ---
 
 ## 🔍 Explorer Proxmox depuis le shell
 
-```bash
 # Lister les VMs et LXC existants
 qm list       # VMs
 pct list      # Conteneurs LXC
@@ -121,7 +112,6 @@ pvecm status
 
 # Voir le stockage disponible
 pvesm status
-```
 
 ---
 
@@ -129,13 +119,9 @@ pvesm status
 
 Depuis un **autre appareil sur ton réseau**, ouvre un navigateur et tape :
 
-```
 https://TON_IP:8006
-```
 
 Remplace `TON_IP` par ce que te donne `ip a` — tu devrais voir l'interface web de Proxmox. C'est de là que tu vas tout gérer ensuite.
-
----
 
 -------------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------------
@@ -170,30 +156,9 @@ Un dashboard qui te ping si ton site ou un service tombe. Très simple à instal
 
 5. 🛡️ Pare-feu pfSense ou OPNsense (VM)
 Contrôler tout le trafic réseau
-Plus avancé, mais hyper formateur pour la cybersécurité. Tu remplaces ta box comme routeur principal et tu as le contrôle total sur ton réseau. Parfait pour ton profil.
+Plus avancé, mais hyper formateur pour la cybersécurité. Tu remplaces ta box comme routeur principal et tu as le contrôle total sur ton réseau.
 
 -------------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------------
 -------------------------------------------------------------------------------------------------------------
-
-
-LXC vs VM
-Ce sont deux approches de virtualisation, mais à des niveaux différents.
-
-VM (Machine Virtuelle)
-Une VM émule un ordinateur complet, avec son propre noyau (kernel) et son propre matériel virtuel (CPU, RAM, disque, carte réseau...).
-
-Repose sur un hyperviseur (VMware, VirtualBox, KVM, Hyper-V...)
-Chaque VM a son propre OS complet (kernel inclus)
-Isolation forte : une VM crashée n'affecte pas l'hôte
-Lourd : démarre en secondes/minutes, consomme plus de RAM et disque
-
-
-LXC (Linux Container)
-Un LXC partage le kernel de l'hôte et isole seulement l'espace utilisateur (processus, réseau, système de fichiers...).
-
-Repose sur des fonctionnalités Linux : cgroups + namespaces
-Pas de kernel propre — il utilise celui de l'hôte
-Isolation plus légère : si le kernel hôte crashe, tout tombe
-Léger : démarre en millisecondes, overhead minimal

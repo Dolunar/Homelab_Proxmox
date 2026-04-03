@@ -1,4 +1,4 @@
-# Guide complet — LXC Site Vitrine sur Proxmox
+# Guide complet — LXC Site sur Proxmox
 
 ------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------
@@ -15,16 +15,14 @@ Lourd : démarre en secondes/minutes, consomme plus de RAM et disque
 
 
 LXC (Linux Container)
-Un LXC partage le kernel de l'hôte et isole seulement l'espace utilisateur (processus, réseau, système de fichiers...).
+Un LXC partage (utilise) le kernel de l'hôte et isole seulement l'espace utilisateur (processus, réseau, système de fichiers...).
 Repose sur des fonctionnalités Linux : cgroups + namespaces
-Pas de kernel propre — il utilise celui de l'hôte
 Isolation plus légère : si le kernel hôte crashe, tout tombe
 Léger : démarre en millisecondes, overhead minimal
 
 ------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------
 ## 📋 Vue d'ensemble des étapes
-```
 1. Télécharger le template Debian 12
 2. Créer le LXC
 3. Configurer le LXC
@@ -32,19 +30,17 @@ Léger : démarre en millisecondes, overhead minimal
 5. Déposer tes fichiers HTML
 6. Ouvrir les ports sur ta box
 7. Nom de domaine + SSL
-```
 
 ---
-
 ## Étape 1 — Télécharger le template Debian 12
 
 Dans l'interface web Proxmox (`https://TON_IP:8006`) :
 
-1. Clique sur ton **nœud** (le nom de ton serveur à gauche)
-2. Clique sur **local** (ton stockage)
-3. Onglet **CT Templates**
-4. Clique sur **Templates**
-5. Cherche `debian-12` et clique **Download**
+1. Clique sur ton nom de serveur à gauche
+2. Clique sur local ton stockage
+3. Onglet CT Template
+4. Clique sur Templates
+5. Cherche debian-12 et clique Download
 
 Attends que le téléchargement se termine.
 
@@ -56,7 +52,7 @@ En haut à droite, clique sur **Create CT** puis remplis :
 
 **Onglet General**
 ```
-Hostname    : site-vitrine
+Hostname    : site
 Password    : (choisis un mot de passe root solide)
 ```
 
@@ -170,7 +166,6 @@ nano /etc/nginx/sites-available/monsite
 
 Colle cette config :
 
-```nginx
 server {
     listen 80;
     server_name mondomaine.com www.mondomaine.com;
@@ -182,11 +177,8 @@ server {
         try_files $uri $uri/ =404;
     }
 }
-```
 
 Active la config :
-
-```bash
 # Créer le lien symbolique
 ln -s /etc/nginx/sites-available/monsite /etc/nginx/sites-enabled/
 
@@ -201,6 +193,17 @@ systemctl reload nginx
 ```
 
 Pour déposer tes fichiers HTML depuis ton PC, utilise **SCP** ou **FileZilla** (SFTP) :
+
+Pour autoriser la connexion SSH en tant que root, tu dois modifier le fichier de config du serveur SSH :
+sudo nano /etc/ssh/sshd_config
+
+Trouve la ligne PermitRootLogin et change sa valeur :
+PermitRootLogin yes
+
+Puis redémarre le service :
+
+bash
+sudo systemctl restart sshd
 
 ```bash
 # Depuis ton PC, envoyer un fichier vers le LXC
@@ -241,7 +244,7 @@ iface eth0 inet static
 systemctl restart networking
 ```
 
-Ensuite dans l'interface de ta box (souvent `192.168.1.1`) cherche **NAT / Redirection de ports / Port Forwarding** et ajoute les règles du tableau ci-dessus.
+Ensuite dans l'interface de ta box (tape `192.168.1.1` sur ton navigateur) cherche **NAT / Redirection de ports / Port Forwarding** et ajoute les règles du tableau ci-dessus.
 
 ---
 
@@ -278,21 +281,3 @@ certbot --nginx -d mondomaine.com -d www.mondomaine.com
 ```
 
 Ton site est maintenant accessible en **HTTPS** avec le cadenas vert. ✅
-
----
-
-## ✅ Récapitulatif final
-
-```
-✅ LXC Debian 12 créé et démarré
-✅ Nginx installé et configuré
-✅ Fichiers HTML déposés dans /var/www/monsite
-✅ IP fixe sur le LXC
-✅ Ports 80 et 443 ouverts sur la box
-✅ Domaine pointé vers ton IP publique
-✅ SSL Let's Encrypt actif
-```
-
----
-
-Tu es à quelle étape actuellement ? Je t'aide à débloquer ce qui coince !

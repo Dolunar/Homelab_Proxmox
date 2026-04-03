@@ -1,0 +1,447 @@
+================================================================
+        DOCUMENTATION COMPLÈTE — PI-HOLE
+        Homelab Dolunar — Avril 2026
+================================================================
+
+TABLE DES MATIÈRES
+------------------
+1. Qu'est-ce que Pi-hole ?
+2. Comment ça fonctionne ?
+3. Installation
+4. Interface web — présentation
+5. DNS local — accès par nom de machine
+6. Blocage de publicités
+7. Listes de blocage (Adlists)
+8. Clients
+9. Groupes
+10. Query Log (journal des requêtes)
+11. Mise à jour
+12. Commandes utiles en ligne de commande
+13. Dépannage
+14. Bonnes pratiques homelab
+
+
+================================================================
+1. QU'EST-CE QUE PI-HOLE ?
+================================================================
+
+Pi-hole est un logiciel open source qui agit comme un serveur DNS
+(Domain Name System) local sur ton réseau. Il a deux rôles principaux :
+
+  1. SERVEUR DNS LOCAL
+     Il résout les noms de domaine à la place de ton FAI ou de
+     Google/Cloudflare. Il peut aussi répondre à des noms personnalisés
+     comme "truenas.home" → 192.168.1.76.
+
+  2. BLOQUEUR DE PUBLICITÉS
+     Il intercepte les requêtes DNS vers des domaines connus pour
+     servir des publicités, du tracking, ou des malwares, et répond
+     "cette adresse n'existe pas". Résultat : la pub ne se charge jamais,
+     sur TOUS les appareils du réseau (PC, téléphone, TV connectée...).
+
+Pi-hole tourne sur un conteneur LXC Debian, consomme environ 50-100 Mo
+de RAM, et gère des dizaines de milliers de requêtes par jour sans
+aucun problème.
+
+Version actuelle dans ce homelab :
+  - Core    : v6.4
+  - FTL     : v6.5
+  - Web UI  : v6.4.1
+
+
+================================================================
+2. COMMENT ÇA FONCTIONNE ?
+================================================================
+
+SANS PI-HOLE :
+  Ton PC → demande "où est google.com ?" → DNS de ta box (ou 8.8.8.8)
+           → répond "216.58.x.x" → ton PC charge la page
+
+AVEC PI-HOLE :
+  Ton PC → demande "où est pub.doubleclick.net ?" → Pi-hole
+           → vérifie sa liste noire → domaine bloqué !
+           → répond "0.0.0.0" → la pub ne se charge pas
+
+  Ton PC → demande "où est google.com ?" → Pi-hole
+           → pas dans la liste noire → transmet à Cloudflare (1.1.1.1)
+           → répond "216.58.x.x" → ton PC charge la page normalement
+
+DNS LOCAL :
+  Ton PC → demande "où est truenas.home ?" → Pi-hole
+           → répond directement "192.168.1.76" (entrée locale)
+           → ton PC accède à TrueNAS par son nom
+
+
+================================================================
+3. INSTALLATION
+================================================================
+
+PRÉREQUIS :
+  - Un conteneur LXC Debian 12 sur Proxmox
+  - IP fixe : 192.168.1.53 (le /53 rappelle le port DNS, mnémotechnique)
+  - Accès internet depuis le conteneur
+
+ÉTAPES :
+  1. Mettre à jour le système
+       apt update && apt upgrade -y
+
+  2. Installer curl si absent
+       apt install curl -y
+
+  3. Lancer l'installateur Pi-hole
+       curl -sSL https://install.pi-hole.net | bash
+
+  4. Répondre aux questions de l'installateur :
+       - Interface réseau    → eth0
+       - DNS upstream        → Cloudflare (1.1.1.1) recommandé
+       - Blocklists          → laisser coché par défaut
+       - Admin interface     → Yes
+       - lighttpd            → Yes
+       - Log queries         → Yes
+
+  5. Noter le mot de passe admin affiché à la fin
+
+ACCÈS À L'INTERFACE WEB :
+  http://192.168.1.53/admin
+
+
+================================================================
+4. INTERFACE WEB — PRÉSENTATION
+================================================================
+
+MENU PRINCIPAL (barre latérale gauche) :
+
+  Dashboard
+    → Vue d'ensemble : nombre de requêtes, % bloqué, top domaines
+
+  Query Log
+    → Journal en temps réel de toutes les requêtes DNS
+
+  GROUP MANAGEMENT :
+    Groups    → Gérer des groupes de clients (ex: "enfants", "adultes")
+    Clients   → Liste des appareils qui utilisent Pi-hole
+    Domains   → Liste blanche / liste noire manuelle de domaines
+    Lists     → Listes de blocage (adlists)
+
+  DNS CONTROL :
+    Disable Blocking → Désactiver temporairement le blocage
+
+  SYSTEM :
+    Settings  → Tous les réglages (DNS, DHCP, API, etc.)
+    Tools     → Outils de diagnostic (ping, dig, etc.)
+
+TABLEAU DE BORD — INDICATEURS CLÉS :
+  - Total Queries       : nombre total de requêtes DNS aujourd'hui
+  - Queries Blocked     : nombre de requêtes bloquées
+  - Percent Blocked     : pourcentage de blocage (typiquement 10-30%)
+  - Domains on Blocklist: nombre de domaines bloqués (ici 91 978)
+
+
+================================================================
+5. DNS LOCAL — ACCÈS PAR NOM DE MACHINE
+================================================================
+
+C'est la fonctionnalité qui permet de taper "truenas.home" dans ton
+navigateur au lieu de "192.168.1.76".
+
+OÙ CONFIGURER :
+  Settings → Local DNS → DNS Records
+  ou directement : http://192.168.1.53/admin/dns_records.php
+
+AJOUTER UNE ENTRÉE :
+  Domain          IP
+  ─────────────────────────────────────
+  proxmox.home    192.168.1.XX
+  truenas.home    192.168.1.XX
+  pihole.home     192.168.1.53
+  site.home       192.168.1.XX
+
+  → Clique sur "Add" pour chaque entrée
+
+CHOISIR SON SUFFIXE :
+  Tu peux utiliser n'importe quel suffixe : .home, .lan, .local, .int
+  Recommandation : évite .local (réservé mDNS/Bonjour), préfère .home
+  ou .lan
+
+CNAME RECORDS :
+  Settings → Local DNS → CNAME Records
+  Permet de créer des alias : "nas.home" → "truenas.home"
+
+POUR QUE ÇA FONCTIONNE :
+  Chaque machine du réseau doit utiliser Pi-hole comme serveur DNS.
+  Deux méthodes :
+
+  Méthode A (recommandée) — Via la box internet :
+    Dans l'interface de ta box, change le DNS distribué par DHCP
+    pour mettre 192.168.1.53. Toutes les machines en bénéficient
+    automatiquement.
+
+  Méthode B — Machine par machine :
+    Sur chaque appareil, changer manuellement le serveur DNS
+    dans les paramètres réseau → 192.168.1.53
+
+
+================================================================
+6. BLOCAGE DE PUBLICITÉS
+================================================================
+
+Pi-hole bloque les pubs en empêchant la résolution DNS des domaines
+publicitaires. Concrètement :
+
+  - Les pubs ne se chargent pas → pages plus légères et rapides
+  - Le tracking est bloqué → meilleure vie privée
+  - Fonctionne sur TOUS les appareils : PC, téléphone, Smart TV,
+    consoles, etc. Sans installer quoi que ce soit sur ces appareils.
+
+CE QUI EST BLOQUÉ PAR DÉFAUT :
+  Avec la liste par défaut (StevenBlack), environ 91 978 domaines
+  sont bloqués, incluant :
+  - Réseaux publicitaires (DoubleClick, AdSense, etc.)
+  - Trackers (Google Analytics, Facebook Pixel, etc.)
+  - Domaines de malwares connus
+
+CE QUI N'EST PAS BLOQUÉ :
+  - Les pubs intégrées dans les vidéos YouTube (elles viennent du
+    même domaine que la vidéo, Pi-hole ne peut pas les distinguer)
+  - Les pubs dans les apps qui utilisent leurs propres domaines
+    non référencés dans les listes
+
+DÉBLOQUER UN DOMAINE (Whitelist) :
+  Si un site est cassé à cause du blocage :
+  Domains → Add domain → mettre en "Whitelist"
+  Ou depuis le Query Log, cliquer sur le domaine bloqué → Whitelist
+
+
+================================================================
+7. LISTES DE BLOCAGE (ADLISTS)
+================================================================
+
+Les adlists sont des listes de domaines malveillants/publicitaires
+maintenues par la communauté. Pi-hole les télécharge et les met à jour.
+
+OÙ LES GÉRER :
+  Lists (menu gauche) ou Settings → Adlists
+
+LISTE PAR DÉFAUT :
+  https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
+  → ~91 000 domaines, très fiable, peu de faux positifs
+
+LISTES SUPPLÉMENTAIRES RECOMMANDÉES :
+
+  Publicités et tracking :
+  https://adaway.org/hosts.txt
+  https://v.firebog.net/hosts/AdguardDNS.txt
+  https://v.firebog.net/hosts/Easylist.txt
+
+  Tracking/vie privée :
+  https://v.firebog.net/hosts/Easyprivacy.txt
+  https://v.firebog.net/hosts/Prigent-Ads.txt
+
+  Malwares :
+  https://v.firebog.net/hosts/Airelle-malware.txt
+
+  Liste consolidée (toutes catégories) :
+  https://firebog.net/  ← site qui recense les meilleures listes
+
+METTRE À JOUR LES LISTES :
+  Après avoir ajouté une liste, aller dans :
+  Tools → Update Gravity
+  (ou en ligne de commande : pihole -g)
+
+  Cette opération télécharge toutes les listes et reconstruit
+  la base de données. À faire après chaque ajout de liste.
+
+
+================================================================
+8. CLIENTS
+================================================================
+
+La section Clients liste tous les appareils qui ont fait des requêtes
+DNS à Pi-hole. Utile pour :
+
+  - Voir quels appareils utilisent Pi-hole
+  - Assigner des groupes différents à des appareils
+    (ex: les appareils des enfants → groupe avec blocage renforcé)
+  - Donner un nom lisible à une IP
+
+AJOUTER UN CLIENT MANUELLEMENT :
+  Clients → Add client
+  → Entrer l'IP ou l'adresse MAC de l'appareil
+  → Lui assigner un groupe
+
+NOMMER UN CLIENT :
+  On peut donner un commentaire/alias à chaque IP pour les identifier
+  facilement dans les logs (ex: "192.168.1.80 → PC-Bureau")
+
+
+================================================================
+9. GROUPES
+================================================================
+
+Les groupes permettent d'appliquer des règles de blocage différentes
+selon les appareils.
+
+EXEMPLE D'USAGE :
+  - Groupe "Default"  → règles normales pour tout le monde
+  - Groupe "Enfants"  → listes de blocage supplémentaires
+                        (contenu adulte, réseaux sociaux, etc.)
+  - Groupe "Serveurs" → pas de blocage (pour les LXC/VMs)
+
+CRÉER UN GROUPE :
+  Groups → Add a new group → donner un nom → Add
+
+ASSIGNER UN CLIENT À UN GROUPE :
+  Clients → sélectionner le client → changer le groupe
+
+
+================================================================
+10. QUERY LOG (JOURNAL DES REQUÊTES)
+================================================================
+
+Le Query Log montre en temps réel toutes les requêtes DNS qui passent
+par Pi-hole. C'est l'outil de diagnostic le plus utile.
+
+COLONNES :
+  Timestamp  → heure de la requête
+  Domain     → domaine demandé
+  Client     → appareil qui a demandé
+  Type       → type de requête (A, AAAA, PTR...)
+  Status     → Forwarded (autorisé) / Blocked (bloqué) / Cached (cache)
+  Reply      → réponse envoyée
+
+FILTRER :
+  On peut filtrer par client, par domaine, par statut
+
+ACTIONS RAPIDES :
+  En cliquant sur un domaine dans le log, on peut :
+  - L'ajouter en whitelist (débloquer)
+  - L'ajouter en blacklist (bloquer manuellement)
+
+DÉSACTIVER LES LOGS (vie privée) :
+  Settings → Privacy → choisir le niveau de logging
+
+
+================================================================
+11. MISE À JOUR
+================================================================
+
+METTRE À JOUR PI-HOLE :
+  En ligne de commande dans le LXC :
+    pihole -up
+
+  Cela met à jour Pi-hole Core, FTL, et l'interface web en une seule
+  commande.
+
+OUBLIES PAS DE METTRE À JOUR DEBIAN (le système) :
+    apt update && apt upgrade -y
+
+METTRE À JOUR LES LISTES DE BLOCAGE :
+    pihole -g
+  (ou Tools → Update Gravity dans l'interface web)
+
+FRÉQUENCE RECOMMANDÉE :
+  - Pi-hole lui-même : quand une nouvelle version sort (vérifier sur
+    https://github.com/pi-hole/pi-hole/releases)
+  - Gravity (listes) : automatiquement 1x/semaine par défaut
+  - Système Debian : 1x/mois minimum
+
+
+================================================================
+12. COMMANDES UTILES EN LIGNE DE COMMANDE
+================================================================
+
+  pihole status          → état du service
+  pihole -up             → mettre à jour Pi-hole
+  pihole -g              → mettre à jour les listes (gravity)
+  pihole -w domaine.com  → whitelister un domaine
+  pihole -b domaine.com  → blacklister un domaine
+  pihole tail            → voir les logs en temps réel
+  pihole restartdns      → redémarrer le service DNS
+  pihole -a -p           → changer le mot de passe admin
+
+  STATISTIQUES :
+  pihole -c              → affiche les stats dans le terminal
+  pihole -q domaine.com  → chercher un domaine dans les listes
+
+  ACTIVER / DÉSACTIVER :
+  pihole disable         → désactiver le blocage
+  pihole disable 5m      → désactiver pendant 5 minutes
+  pihole enable          → réactiver le blocage
+
+
+================================================================
+13. DÉPANNAGE
+================================================================
+
+PROBLÈME : Un site ne fonctionne plus
+  → Query Log : chercher le domaine, voir s'il est bloqué
+  → Si oui : l'ajouter en whitelist
+  → Commande : pihole -w nom-du-domaine.com
+
+PROBLÈME : Pi-hole ne bloque plus rien
+  → Vérifier que les machines utilisent bien Pi-hole comme DNS
+  → pihole status → vérifier que le service tourne
+  → pihole restartdns
+
+PROBLÈME : Interface web inaccessible
+  → Vérifier que le LXC tourne dans Proxmox
+  → systemctl status lighttpd → vérifier le serveur web
+  → systemctl restart lighttpd
+
+PROBLÈME : Mot de passe admin oublié
+  → Dans le LXC : pihole -a -p
+  → Entrer le nouveau mot de passe
+
+PROBLÈME : DNS local ne fonctionne pas (.home ne résout pas)
+  → Vérifier que la machine utilise bien 192.168.1.53 comme DNS
+  → Vérifier l'entrée dans Settings → Local DNS → DNS Records
+  → Faire un test : nslookup truenas.home 192.168.1.53
+
+PROBLÈME : Le conteneur LXC n'a pas internet
+  → Vérifier la gateway : ip route
+  → Vérifier le DNS du conteneur : cat /etc/resolv.conf
+  → Tester la connectivité : ping 8.8.8.8
+
+
+================================================================
+14. BONNES PRATIQUES HOMELAB
+================================================================
+
+1. IP FIXE OBLIGATOIRE
+   Pi-hole doit toujours avoir la même IP (192.168.1.53).
+   Si elle change, tous les appareils perdent leur DNS.
+
+2. DNS DE SECOURS
+   Dans ta box ou sur tes machines, configurer un DNS de secours
+   (ex: 1.1.1.1) au cas où Pi-hole serait indisponible.
+   Comme ça, tu gardes internet même si le LXC est arrêté.
+
+3. SAUVEGARDER LA CONFIG
+   Settings → Teleporter → Export
+   → Exporte toute ta config (listes blanches, DNS locaux, adlists)
+   → À stocker dans ton dataset "backups" sur TrueNAS !
+
+4. NE PAS BLOQUER LES VMs/LXC
+   Tes serveurs (Proxmox, TrueNAS, etc.) n'ont pas besoin du blocage
+   pub. Crée un groupe "Serveurs" sans listes de blocage et
+   assigne-leur.
+
+5. GRAVITY AUTOMATIQUE
+   Pi-hole met à jour ses listes automatiquement 1x/semaine.
+   Tu peux changer la fréquence dans :
+   Settings → API → Gravity update schedule
+
+6. MONITORING
+   Le Dashboard donne un bon aperçu. Pour aller plus loin,
+   Pi-hole s'intègre avec Grafana pour des graphiques avancés.
+
+7. HTTPS POUR L'INTERFACE WEB
+   Par défaut l'interface est en HTTP. Pour un homelab c'est
+   acceptable, mais tu peux configurer un certificat auto-signé
+   via les settings si tu veux du HTTPS.
+
+
+================================================================
+        FIN DE LA DOCUMENTATION PI-HOLE
+        Homelab Dolunar — Avril 2026
+================================================================
