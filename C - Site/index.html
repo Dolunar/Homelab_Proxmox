@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dolunay — Cybersec Enthusiast</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #070b10; --bg2: #0d1520; --panel: #0f1e2e; --border: #1a3a55;
+      --accent: #00e5ff; --accent2: #ff4d6d; --green: #39ff14;
+      --text: #c8dce8; --dim: #4a6a80;
+      --font-mono: 'Share Tech Mono', monospace; --font-ui: 'Rajdhani', sans-serif;
+    }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font-ui); font-size: 16px; line-height: 1.6; overflow-x: hidden; }
+    body::before { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events: none; z-index: 0; opacity: .4; }
+    body::after { content: ''; position: fixed; inset: 0; background: repeating-linear-gradient(to bottom, transparent 0px, transparent 3px, rgba(0,0,0,.1) 3px, rgba(0,0,0,.1) 4px); pointer-events: none; z-index: 0; }
+    ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-track { background: var(--bg); } ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 2rem; position: relative; z-index: 1; }
+    nav { position: fixed; top: 0; width: 100%; background: rgba(7,11,16,.88); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); z-index: 100; padding: .9rem 0; }
+    nav .container { display: flex; justify-content: space-between; align-items: center; }
+    .nav-logo { font-family: var(--font-mono); color: var(--accent); font-size: 1rem; letter-spacing: .1em; }
+    .nav-logo span { color: var(--accent2); }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a { font-family: var(--font-mono); font-size: .78rem; color: var(--dim); text-decoration: none; text-transform: uppercase; letter-spacing: .15em; transition: color .25s; }
+    .nav-links a:hover { color: var(--accent); }
+    #hero { min-height: 100vh; display: flex; align-items: center; padding-top: 80px; position: relative; overflow: hidden; }
+    #hero::before { content: ''; position: absolute; inset: 0; background-image: linear-gradient(rgba(0,229,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,.04) 1px, transparent 1px); background-size: 60px 60px; animation: gridShift 20s linear infinite; }
+    @keyframes gridShift { 0%{background-position:0 0} 100%{background-position:60px 60px} }
+    .hero-content { position: relative; z-index: 1; }
+    .hero-tag { font-family: var(--font-mono); font-size: .8rem; color: var(--green); letter-spacing: .2em; text-transform: uppercase; margin-bottom: 1rem; opacity: 0; animation: fadeUp .6s .2s ease forwards; }
+    .hero-greeting { font-family: var(--font-mono); font-size: 1.1rem; color: var(--dim); margin-bottom: .4rem; opacity: 0; animation: fadeUp .6s .3s ease forwards; }
+    .hero-name { font-family: var(--font-ui); font-size: clamp(3rem, 8vw, 6rem); font-weight: 700; line-height: 1; color: #fff; opacity: 0; animation: fadeUp .6s .4s ease forwards; }
+    .hero-name .accent { color: var(--accent); }
+    .hero-title { font-family: var(--font-mono); font-size: clamp(.9rem, 2vw, 1.15rem); color: var(--dim); margin-top: 1rem; opacity: 0; animation: fadeUp .6s .55s ease forwards; }
+    .blink { display: inline-block; width: .55em; height: 1em; background: var(--accent); margin-left: 3px; vertical-align: middle; animation: blink 1s step-end infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    .hero-desc { max-width: 540px; color: var(--text); margin-top: 1.5rem; font-size: 1.1rem; font-weight: 300; opacity: 0; animation: fadeUp .6s .7s ease forwards; }
+    .hero-cta { display: flex; gap: 1rem; margin-top: 2.5rem; flex-wrap: wrap; opacity: 0; animation: fadeUp .6s .85s ease forwards; }
+    .btn { display: inline-flex; align-items: center; gap: .5rem; font-family: var(--font-mono); font-size: .82rem; letter-spacing: .1em; padding: .75rem 1.75rem; border-radius: 2px; text-decoration: none; transition: all .25s; cursor: pointer; border: none; }
+    .btn-primary { background: var(--accent); color: var(--bg); }
+    .btn-primary:hover { background: #fff; box-shadow: 0 0 24px var(--accent); }
+    .btn-outline { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+    .btn-outline:hover { background: rgba(0,229,255,.1); box-shadow: 0 0 16px rgba(0,229,255,.3); }
+    .hero-location { display: flex; align-items: center; gap: .6rem; font-family: var(--font-mono); font-size: .8rem; color: var(--dim); margin-top: 2rem; opacity: 0; animation: fadeUp .6s 1s ease forwards; }
+    .hero-location span { color: var(--accent); }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+    section { padding: 6rem 0; position: relative; z-index: 1; }
+    .section-header { margin-bottom: 3rem; }
+    .section-tag { font-family: var(--font-mono); font-size: .75rem; color: var(--accent); letter-spacing: .25em; text-transform: uppercase; }
+    .section-title { font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 700; color: #fff; margin-top: .3rem; line-height: 1.2; }
+    .section-title span { color: var(--accent); }
+    .section-line { width: 60px; height: 2px; background: linear-gradient(90deg, var(--accent), transparent); margin-top: 1rem; }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 4px; padding: 1.75rem; transition: border-color .3s, transform .3s, box-shadow .3s; }
+    .panel:hover { border-color: var(--accent); transform: translateY(-4px); box-shadow: 0 8px 32px rgba(0,229,255,.08); }
+    .projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
+    .project-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: .75rem; }
+    .project-name { font-size: 1.15rem; font-weight: 700; color: #fff; }
+    .project-badge { font-family: var(--font-mono); font-size: .65rem; padding: .2rem .6rem; border-radius: 2px; text-transform: uppercase; letter-spacing: .1em; }
+    .badge-red    { background: rgba(255,77,109,.15); color: var(--accent2); border: 1px solid var(--accent2); }
+    .badge-blue   { background: rgba(0,229,255,.1);   color: var(--accent);  border: 1px solid var(--accent); }
+    .badge-green  { background: rgba(57,255,20,.1);   color: var(--green);   border: 1px solid var(--green); }
+    .badge-orange { background: rgba(255,165,0,.1);   color: #ffa500;        border: 1px solid #ffa500; }
+    .project-desc { font-size: .95rem; color: var(--text); margin-bottom: 1rem; }
+    .project-tags { display: flex; flex-wrap: wrap; gap: .4rem; }
+    .project-tag { font-family: var(--font-mono); font-size: .7rem; padding: .2rem .55rem; border: 1px solid var(--border); border-radius: 2px; color: var(--dim); }
+    .project-footer { margin-top: 1.2rem; padding-top: 1rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .project-gh-link { font-family: var(--font-mono); font-size: .72rem; color: var(--dim); text-decoration: none; display: flex; align-items: center; gap: .4rem; transition: color .2s; }
+    .project-gh-link:hover { color: var(--accent); }
+    .project-star { font-family: var(--font-mono); font-size: .72rem; color: var(--dim); }
+    .homelab-intro { font-family: var(--font-mono); font-size: .85rem; color: var(--dim); margin-bottom: 2.5rem; line-height: 1.8; max-width: 700px; }
+    .homelab-intro strong { color: var(--accent); }
+    .infra-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 3rem; }
+    .infra-card { background: var(--panel); border: 1px solid var(--border); border-radius: 4px; padding: 1.25rem; text-align: center; transition: all .3s; position: relative; overflow: hidden; }
+    .infra-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0; transition: opacity .3s; }
+    .infra-card:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 6px 24px rgba(0,229,255,.1); }
+    .infra-card:hover::before { opacity: 1; }
+    .infra-icon { font-size: 1.8rem; margin-bottom: .6rem; }
+    .infra-name { font-size: .95rem; font-weight: 700; color: #fff; margin-bottom: .3rem; }
+    .infra-ip { font-family: var(--font-mono); font-size: .68rem; color: var(--accent); margin-bottom: .3rem; }
+    .infra-desc { font-family: var(--font-mono); font-size: .65rem; color: var(--dim); }
+    .infra-status { display: inline-flex; align-items: center; gap: .3rem; font-family: var(--font-mono); font-size: .62rem; color: var(--green); margin-top: .5rem; }
+    .infra-status::before { content: '●'; animation: blink 2s step-end infinite; }
+    .homelab-services { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+    .service-card { background: var(--panel); border: 1px solid var(--border); border-radius: 4px; padding: 1.5rem; transition: all .3s; }
+    .service-card:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 6px 24px rgba(0,229,255,.08); }
+    .service-header { display: flex; align-items: center; gap: .75rem; margin-bottom: .75rem; }
+    .service-icon { font-size: 1.5rem; }
+    .service-name { font-size: 1.05rem; font-weight: 700; color: #fff; }
+    .service-badge { font-family: var(--font-mono); font-size: .6rem; padding: .15rem .5rem; border-radius: 2px; text-transform: uppercase; margin-left: auto; }
+    .service-desc { font-size: .88rem; color: var(--text); margin-bottom: 1rem; line-height: 1.6; }
+    .service-tags { display: flex; flex-wrap: wrap; gap: .35rem; }
+    .service-tag { font-family: var(--font-mono); font-size: .65rem; padding: .15rem .5rem; border: 1px solid var(--border); border-radius: 2px; color: var(--dim); }
+    .homelab-stack { margin-top: 3rem; }
+    .stack-title { font-family: var(--font-mono); font-size: .78rem; color: var(--accent); letter-spacing: .15em; text-transform: uppercase; margin-bottom: 1.2rem; display: flex; align-items: center; gap: .6rem; }
+    .stack-title::before { content: '▸'; color: var(--accent2); }
+    .stack-flow { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; font-family: var(--font-mono); font-size: .75rem; }
+    .stack-node { background: var(--bg2); border: 1px solid var(--border); border-radius: 3px; padding: .4rem .9rem; color: var(--text); white-space: nowrap; }
+    .stack-node.active { border-color: var(--accent); color: var(--accent); }
+    .stack-arrow { color: var(--dim); }
+    .learning-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.2rem; }
+    .learn-card { text-align: center; }
+    .learn-icon { font-size: 2rem; margin-bottom: .5rem; }
+    .learn-name { font-size: 1rem; font-weight: 700; color: #fff; }
+    .learn-sub { font-family: var(--font-mono); font-size: .72rem; color: var(--dim); margin-top: .25rem; }
+    .certs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+    .cert-card { display: flex; flex-direction: column; gap: .6rem; }
+    .cert-name { font-size: 1.05rem; font-weight: 700; color: #fff; }
+    .cert-issuer { font-family: var(--font-mono); font-size: .72rem; color: var(--accent); letter-spacing: .08em; }
+    .cert-date { font-family: var(--font-mono); font-size: .7rem; color: var(--dim); }
+    .cert-id { font-family: var(--font-mono); font-size: .65rem; color: var(--dim); margin-top: .2rem; }
+    .cert-id span { color: var(--accent2); }
+    .edu-list { display: flex; flex-direction: column; gap: 1.5rem; }
+    .edu-card { display: grid; grid-template-columns: 40px 1fr; gap: 0 1.5rem; position: relative; }
+    .edu-card::before { content: ''; position: absolute; left: 19px; top: 42px; bottom: -1.5rem; width: 1px; background: var(--border); }
+    .edu-card:last-child::before { display: none; }
+    .edu-dot { width: 40px; height: 40px; background: var(--panel); border: 2px solid var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; margin-top: .2rem; z-index: 1; }
+    .edu-body { padding-bottom: .5rem; }
+    .edu-school { font-family: var(--font-mono); font-size: .72rem; color: var(--accent); letter-spacing: .1em; text-transform: uppercase; }
+    .edu-degree { font-size: 1.05rem; font-weight: 700; color: #fff; margin: .2rem 0; }
+    .edu-dates { font-family: var(--font-mono); font-size: .7rem; color: var(--dim); margin-bottom: .6rem; }
+    .edu-desc { font-size: .88rem; color: var(--text); line-height: 1.6; }
+    .edu-tags { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .75rem; }
+    .edu-tag { font-family: var(--font-mono); font-size: .65rem; padding: .2rem .55rem; border: 1px solid var(--border); border-radius: 2px; color: var(--dim); }
+    .about-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 3rem; align-items: start; }
+    .about-text p { color: var(--text); font-size: 1.05rem; margin-bottom: 1rem; }
+    .about-text strong { color: var(--accent); font-weight: 600; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; margin-top: 2rem; }
+    .info-row { display: flex; flex-direction: column; }
+    .info-key { font-family: var(--font-mono); font-size: .7rem; color: var(--accent); letter-spacing: .1em; text-transform: uppercase; }
+    .info-val { font-size: .95rem; color: var(--text); }
+    .skill-card-title { font-family: var(--font-mono); font-size: .78rem; color: var(--accent); letter-spacing: .15em; text-transform: uppercase; margin-bottom: 1.2rem; display: flex; align-items: center; gap: .6rem; }
+    .skill-card-title::before { content: '▸'; color: var(--accent2); }
+    .about-facts { display: flex; flex-direction: column; gap: .9rem; }
+    .fact-row { display: flex; align-items: flex-start; gap: .9rem; font-size: .95rem; color: var(--text); }
+    .fact-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: .05rem; }
+    .skills-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+    .skill-list { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .skill-tag { font-family: var(--font-mono); font-size: .75rem; padding: .3rem .75rem; border: 1px solid var(--border); border-radius: 2px; color: var(--text); transition: all .2s; }
+    .skill-tag:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,229,255,.05); }
+    .learning-note { display: inline-flex; align-items: center; gap: .5rem; font-family: var(--font-mono); font-size: .72rem; color: var(--green); border: 1px solid var(--green); background: rgba(57,255,20,.06); padding: .25rem .7rem; border-radius: 2px; margin-bottom: 1.5rem; }
+    .learning-note::before { content: '●'; animation: blink 1.5s step-end infinite; }
+    .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: start; }
+    .contact-links { display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem; }
+    .contact-link { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; border: 1px solid var(--border); border-radius: 4px; text-decoration: none; color: var(--text); transition: all .25s; }
+    .contact-link:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,229,255,.04); }
+    .contact-link-icon { font-size: 1.3rem; }
+    .contact-link-label { font-family: var(--font-mono); font-size: .82rem; }
+    .contact-form { display: flex; flex-direction: column; gap: 1rem; }
+    .form-group label { display: block; font-family: var(--font-mono); font-size: .72rem; color: var(--accent); letter-spacing: .15em; text-transform: uppercase; margin-bottom: .4rem; }
+    .form-group input, .form-group textarea { width: 100%; background: var(--bg2); border: 1px solid var(--border); border-radius: 2px; padding: .75rem 1rem; color: var(--text); font-family: var(--font-mono); font-size: .85rem; outline: none; transition: border-color .25s; resize: vertical; }
+    .form-group input:focus, .form-group textarea:focus { border-color: var(--accent); }
+    footer { border-top: 1px solid var(--border); padding: 2rem 0; text-align: center; position: relative; z-index: 1; }
+    footer p { font-family: var(--font-mono); font-size: .75rem; color: var(--dim); }
+    footer span { color: var(--accent); }
+    @media (max-width: 768px) {
+      .about-grid, .contact-grid { grid-template-columns: 1fr; gap: 2rem; }
+      .nav-links { display: none; }
+      .info-grid { grid-template-columns: 1fr; }
+      .stack-flow { font-size: .65rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="container">
+      <div class="nav-logo">// <span>Dolunay</span>.fr</div>
+      <ul class="nav-links">
+        <li><a href="#projects">Projects</a></li>
+        <li><a href="#homelab">Homelab</a></li>
+        <li><a href="#learning">Learning</a></li>
+        <li><a href="#certs">Certifications</a></li>
+        <li><a href="#education">Education</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <section id="hero">
+    <div class="container">
+      <div class="hero-content">
+        <p class="hero-tag">// Cybersecurity Enthusiast · Self-learner · Builder</p>
+        <p class="hero-greeting">Hellooo there 👋</p>
+        <h1 class="hero-name">I'm <span class="accent">Dolu</span></h1>
+        <p class="hero-title">Cybersec Student &amp; Passionate Builder<span class="blink"></span></p>
+        <p class="hero-desc">Obsessed with learning and becoming better every day. Whenever an idea pops into my mind, you can be sure I'll build it ASAP.</p>
+        <div class="hero-cta">
+          <a href="#projects" class="btn btn-primary">My Projects</a>
+          <a href="#homelab" class="btn btn-outline">Homelab 🖥️</a>
+          <a href="#contact" class="btn btn-outline">Contact!</a>
+        </div>
+        <div class="hero-location">📍 <span>France</span> &amp; <span>Luxembourg</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="projects" style="background: var(--bg2);">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-tag">// 01. Build log</p>
+        <h2 class="section-title">My <span>projects</span></h2>
+        <div class="section-line"></div>
+      </div>
+      <p style="font-family:var(--font-mono); font-size:.82rem; color:var(--dim); margin-bottom:2rem;">Each one is a new experiment. Testing new things every day. 🧪</p>
+      <div class="projects-grid">
+
+        <div class="panel" style="border-color: rgba(255,215,0,.4); box-shadow: 0 0 20px rgba(255,215,0,.06);">
+          <div class="project-header">
+            <div class="project-name">CyberHumanum'Est 🥇</div>
+            <span class="project-badge badge-red">Competition</span>
+          </div>
+          <p class="project-desc">High-intensity cyberwarfare simulation — Sept. 2025 to Feb. 2026. My team <strong style="color:var(--accent)">Cryptanga</strong> won the competition. Challenged technically and grew alongside passionate individuals in real attack/defense scenarios.</p>
+          <div class="project-tags">
+            <span class="project-tag">Cyberwarfare</span><span class="project-tag">Red/Blue Team</span><span class="project-tag">CTF</span><span class="project-tag">Teamwork</span>
+          </div>
+          <div class="project-footer">
+            <span style="font-family:var(--font-mono); font-size:.72rem; color: gold;">🏆 1st place — Team Cryptanga</span>
+            <span style="font-family:var(--font-mono); font-size:.7rem; color:var(--dim);">Sept 2025 – Feb 2026</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="project-header">
+            <div class="project-name">Secure Virtualized Infrastructure</div>
+            <span class="project-badge badge-blue">Infra · Network</span>
+          </div>
+          <p class="project-desc">Full enterprise-grade architecture on Proxmox — dual pfSense firewalls, VLAN segmentation (DMZ, servers, users), internal PKI with OpenSSL, Wazuh SIEM, Nginx reverse proxy, Squid proxy, Zero Trust principles.</p>
+          <div class="project-tags">
+            <span class="project-tag">Proxmox</span><span class="project-tag">pfSense</span><span class="project-tag">Wazuh / SIEM</span><span class="project-tag">Zero Trust</span><span class="project-tag">PKI / TLS</span><span class="project-tag">VLAN</span><span class="project-tag">Nginx</span><span class="project-tag">Linux</span>
+          </div>
+          <div class="project-footer">
+            <span style="font-family:var(--font-mono); font-size:.7rem; color:var(--dim);">Université de Lorraine</span>
+            <span style="font-family:var(--font-mono); font-size:.7rem; color:var(--dim);">Oct 2025 – Feb 2026</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="project-header">
+            <div class="project-name">Cyber Law Research</div>
+            <span class="project-badge badge-orange">Research</span>
+          </div>
+          <p class="project-desc">Research paper on IT law: <em style="color:var(--text)">"How cyberweapons are transforming global power balances."</em> Analysis of cyberwarfare legal frameworks and geopolitical implications. Co-authored with 4 contributors.</p>
+          <div class="project-tags">
+            <span class="project-tag">Cyber Law</span><span class="project-tag">Geopolitics</span><span class="project-tag">Research</span><span class="project-tag">Cyberweapons</span>
+          </div>
+          <div class="project-footer">
+            <span style="font-family:var(--font-mono); font-size:.7rem; color:var(--dim);">Jan 2025 – Mar 2025</span>
+            <span style="font-family:var(--font-mono); font-size:.7rem; color:var(--dim);">👥 5 contributors</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="project-header">
+            <div class="project-name">NP-Hard Algorithms</div>
+            <span class="project-badge badge-orange">Algorithms · C</span>
+          </div>
+          <p class="project-desc">Solving NP-hard problems in C using LPT, FPTAS &amp; PTAS, and Dynamic Programming. Deep dive into algorithmic complexity and exponential problem scaling.</p>
+          <div class="project-tags">
+            <span class="project-tag">C</span><span class="project-tag">LPT</span><span class="project-tag">FPTAS / PTAS</span><span class="project-tag">Dynamic Programming</span><span class="project-tag">Complexity</span>
+          </div>
+          <div class="project-footer">
+            <span style="font-family:var(--font-mono); font-size:.7rem; color:var(--dim);">Sept 2024 – Nov 2024</span>
+            <span style="font-family:var(--font-mono); font-size:.7rem; color:var(--dim);">👥 4 contributors</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="project-header">
+            <div class="project-name">Multiplayer Network App</div>
+            <span class="project-badge badge-green">Go · Network</span>
+          </div>
+          <p class="project-desc">Server-client multiplayer game in Go — user auth, room management, saved games, API-generated words, synchronized timers, in-game chat, and adjustable difficulty. Full-stack network programming.</p>
+          <div class="project-tags">
+            <span class="project-tag">Go</span><span class="project-tag">Server/Client</span><span class="project-tag">Authentication</span><span class="project-tag">REST API</span><span class="project-tag">Multiplayer</span>
+          </div>
+          <div class="project-footer">
+            <span style="font-family:var(--font-mono); font-size:.7rem; color:var(--dim);">Sept 2024 – Oct 2024</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="project-header">
+            <div class="project-name">Détecteur de Défauts</div>
+            <span class="project-badge badge-orange">Tool · Python</span>
+          </div>
+          <p class="project-desc">Defect detection software for an adhesive factory (Avery Dennison). Analyzes production output to automatically identify flaws — a real-world industrial Python application.</p>
+          <div class="project-tags">
+            <span class="project-tag">Python</span><span class="project-tag">Image Processing</span><span class="project-tag">Industrial</span>
+          </div>
+          <div class="project-footer">
+            <a href="https://github.com/Dolunay/Detecteur_Defauts" target="_blank" class="project-gh-link">🐙 github.com/Dolunay/Detecteur_Defauts</a>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="project-header">
+            <div class="project-name">Portfolio</div>
+            <span class="project-badge badge-green">Web · Self-hosted</span>
+          </div>
+          <p class="project-desc">This very site — hand-crafted HTML/CSS portfolio, self-hosted on my Proxmox homelab and deployed via Cloudflare Tunnel on dolunay.fr. No frameworks, no cloud hosting, just pure code.</p>
+          <div class="project-tags">
+            <span class="project-tag">HTML</span><span class="project-tag">CSS</span><span class="project-tag">Self-hosted</span><span class="project-tag">Nginx</span><span class="project-tag">Cloudflare</span>
+          </div>
+          <div class="project-footer">
+            <a href="https://github.com/Dolunay/Portfolio" target="_blank" class="project-gh-link">🐙 github.com/Dolunay/Portfolio</a>
+            <span class="project-star">⭐ 1</span>
+          </div>
+        </div>
+
+        <div class="panel" style="border-style:dashed; opacity:.6;">
+          <div class="project-header">
+            <div class="project-name">Next idea...</div>
+            <span class="project-badge badge-red">Soon™</span>
+          </div>
+          <p class="project-desc">Whenever a new idea pops into my mind, you can be sure I'll build it ASAP. Stay tuned.</p>
+          <div class="project-tags"><span class="project-tag">???</span></div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <section id="homelab">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-tag">// 02. Infrastructure</p>
+        <h2 class="section-title">My <span>homelab</span></h2>
+        <div class="section-line"></div>
+      </div>
+      <p class="homelab-intro">Simple idea: an old PC running 24/7, with <strong>Proxmox</strong> as the hypervisor, and everything else as VMs and LXC containers. Web server, NAS, VPN, DNS, automatic backups — all running at home, on my own hardware. It's my personal lab and experimentation playground. 🔬</p>
+      <div class="infra-grid">
+        <div class="infra-card"><div class="infra-icon">🖥️</div><div class="infra-name">Proxmox VE</div><div class="infra-ip">192.168.1.60</div><div class="infra-desc">HP Z4 G4 · 32GB RAM · NVMe 1TB</div><div class="infra-status">running</div></div>
+        <div class="infra-card"><div class="infra-icon">🌐</div><div class="infra-name">Web Server</div><div class="infra-ip">192.168.1.50</div><div class="infra-desc">LXC Debian 12 · Nginx · dolunay.fr</div><div class="infra-status">running</div></div>
+        <div class="infra-card"><div class="infra-icon">🗄️</div><div class="infra-name">TrueNAS Scale</div><div class="infra-ip">192.168.1.76</div><div class="infra-desc">VM · 12TB HDD · ZFS datapool</div><div class="infra-status">running</div></div>
+        <div class="infra-card"><div class="infra-icon">🛡️</div><div class="infra-name">Pi-hole</div><div class="infra-ip">192.168.1.53</div><div class="infra-desc">LXC · Local DNS · Ad blocking · DoH</div><div class="infra-status">running</div></div>
+        <div class="infra-card"><div class="infra-icon">🔒</div><div class="infra-name">WireGuard VPN</div><div class="infra-ip">192.168.1.54</div><div class="infra-desc">LXC · PiVPN · Secure remote access</div><div class="infra-status">running</div></div>
+        <div class="infra-card" style="border-style:dashed; opacity:.5;"><div class="infra-icon">📊</div><div class="infra-name">Monitoring</div><div class="infra-ip">soon</div><div class="infra-desc">Uptime Kuma · Grafana</div><div class="infra-status" style="color:var(--dim);">planned</div></div>
+      </div>
+      <div style="margin-bottom: 2rem;"><div class="stack-title">What I've set up</div></div>
+      <div class="homelab-services">
+        <div class="service-card">
+          <div class="service-header"><span class="service-icon">🌐</span><span class="service-name">Self-hosted website</span><span class="service-badge badge-green">✅ live</span></div>
+          <p class="service-desc">This very site runs on a Debian 12 LXC with Nginx, hosted on my home Proxmox. Publicly accessible via Cloudflare Tunnel — no need to open ports, even with an ISP router that blocks ports 80 and 443.</p>
+          <div class="service-tags"><span class="service-tag">Nginx</span><span class="service-tag">Debian 12</span><span class="service-tag">Cloudflare Tunnel</span><span class="service-tag">LXC</span><span class="service-tag">dolunay.fr</span></div>
+        </div>
+        <div class="service-card">
+          <div class="service-header"><span class="service-icon">🗄️</span><span class="service-name">NAS with TrueNAS Scale</span><span class="service-badge badge-green">✅ live</span></div>
+          <p class="service-desc">12TB of storage with a ZFS pool, separate datasets (media, documents, backups, vms), SMB share accessible from Windows, automatic daily snapshots. Proxmox VMs are automatically backed up to it.</p>
+          <div class="service-tags"><span class="service-tag">TrueNAS Scale</span><span class="service-tag">ZFS</span><span class="service-tag">SMB</span><span class="service-tag">Snapshots</span><span class="service-tag">12TB</span></div>
+        </div>
+        <div class="service-card">
+          <div class="service-header"><span class="service-icon">🛡️</span><span class="service-name">Pi-hole + DNS over HTTPS</span><span class="service-badge badge-green">✅ live</span></div>
+          <p class="service-desc">Local DNS server that blocks ads across the entire network without installing anything on each device. DNS requests are encrypted via dnscrypt-proxy to Cloudflare. Machines are accessible by name (.lan) instead of typing IPs manually.</p>
+          <div class="service-tags"><span class="service-tag">Pi-hole</span><span class="service-tag">DNS over HTTPS</span><span class="service-tag">dnscrypt-proxy</span><span class="service-tag">Ad blocking</span><span class="service-tag">.lan</span></div>
+        </div>
+        <div class="service-card">
+          <div class="service-header"><span class="service-icon">🔒</span><span class="service-name">WireGuard VPN</span><span class="service-badge badge-green">✅ live</span></div>
+          <p class="service-desc">Secure remote access to my entire network from anywhere in the world. Installed via PiVPN on a Debian 12 LXC. DNS points to Pi-hole — so even on 4G, ads are blocked and .lan names work.</p>
+          <div class="service-tags"><span class="service-tag">WireGuard</span><span class="service-tag">PiVPN</span><span class="service-tag">LXC</span><span class="service-tag">Freebox</span><span class="service-tag">VPN</span></div>
+        </div>
+        <div class="service-card">
+          <div class="service-header"><span class="service-icon">💾</span><span class="service-name">Automatic backups</span><span class="service-badge badge-green">✅ live</span></div>
+          <p class="service-desc">Robocopy + Windows Task Scheduler to automatically sync my folders to the NAS every night at 9pm. Documents, iCloud photos — everything lands on the NAS without me doing anything. Simple, native, reliable.</p>
+          <div class="service-tags"><span class="service-tag">Robocopy</span><span class="service-tag">Windows Task Scheduler</span><span class="service-tag">SMB</span><span class="service-tag">Automated</span></div>
+        </div>
+        <div class="service-card" style="border-style:dashed; opacity:.6;">
+          <div class="service-header"><span class="service-icon">📊</span><span class="service-name">Monitoring — coming soon</span><span class="service-badge badge-orange">planned</span></div>
+          <p class="service-desc">Uptime Kuma to monitor that all my services are running and get alerted if something goes down. Grafana for metrics. That's the next step.</p>
+          <div class="service-tags"><span class="service-tag">Uptime Kuma</span><span class="service-tag">Grafana</span><span class="service-tag">Alerting</span></div>
+        </div>
+      </div>
+      <div class="homelab-stack">
+        <div class="stack-title">How a request flows through my infra</div>
+        <div class="stack-flow">
+          <span class="stack-node">Internet</span><span class="stack-arrow">→</span><span class="stack-node active">Cloudflare</span><span class="stack-arrow">→</span><span class="stack-node active">cloudflared Tunnel</span><span class="stack-arrow">→</span><span class="stack-node active">LXC Nginx (192.168.1.50)</span><span class="stack-arrow">→</span><span class="stack-node">dolunay.fr ✅</span>
+        </div>
+        <div class="stack-flow" style="margin-top:.75rem;">
+          <span class="stack-node">Phone on 4G</span><span class="stack-arrow">→</span><span class="stack-node active">WireGuard VPN</span><span class="stack-arrow">→</span><span class="stack-node active">Pi-hole DNS (192.168.1.53)</span><span class="stack-arrow">→</span><span class="stack-node">Full local network ✅</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="learning" style="background: var(--bg2);">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-tag">// 03. Roadmap</p>
+        <h2 class="section-title">Currently <span>learning</span></h2>
+        <div class="section-line"></div>
+      </div>
+      <div class="learning-grid">
+        <div class="panel learn-card"><div class="learn-icon">🔍</div><div class="learn-name">Pentesting</div><div class="learn-sub">Ethical hacking fundamentals</div></div>
+        <div class="panel learn-card"><div class="learn-icon">🌐</div><div class="learn-name">Web Security</div><div class="learn-sub">OWASP, XSS, SQLi, SSRF</div></div>
+        <div class="panel learn-card"><div class="learn-icon">🐍</div><div class="learn-name">Python for Security</div><div class="learn-sub">Scripting &amp; tool building</div></div>
+        <div class="panel learn-card"><div class="learn-icon">🏴</div><div class="learn-name">CTF Challenges</div><div class="learn-sub">HackTheBox / TryHackMe</div></div>
+        <div class="panel learn-card"><div class="learn-icon">🖧</div><div class="learn-name">Networking</div><div class="learn-sub">TCP/IP, DNS, Protocols</div></div>
+        <div class="panel learn-card"><div class="learn-icon">🐧</div><div class="learn-name">Linux Mastery</div><div class="learn-sub">Admin, scripting, hardening</div></div>
+        <div class="panel learn-card"><div class="learn-icon">🖥️</div><div class="learn-name">Proxmox &amp; Homelab</div><div class="learn-sub">Virtualization · NAS · VPN · DNS</div></div>
+        <div class="panel learn-card"><div class="learn-icon">🔬</div><div class="learn-name">Reverse Engineering</div><div class="learn-sub">Ghidra, x86/x64 assembly</div></div>
+        <div class="panel learn-card"><div class="learn-icon">🦠</div><div class="learn-name">Malware Development</div><div class="learn-sub">Conception &amp; offensive techniques</div></div>
+        <div class="panel learn-card"><div class="learn-icon">🧫</div><div class="learn-name">Dynamic Malware Analysis</div><div class="learn-sub">Sandbox &amp; behavioral analysis</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="certs">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-tag">// 04. Certifications</p>
+        <h2 class="section-title">My <span>certifications</span></h2>
+        <div class="section-line"></div>
+      </div>
+      <div class="certs-grid">
+        <div class="panel cert-card"><div style="font-size:1.6rem;">☁️</div><div class="cert-name">Google Cloud Cybersecurity</div><div class="cert-issuer">Google</div><div class="cert-date">📅 May 2025</div><div class="cert-id">ID : <span>UBQU4FNA1D65</span></div></div>
+        <div class="panel cert-card"><div style="font-size:1.6rem;">🔐</div><div class="cert-name">Google Cybersecurity</div><div class="cert-issuer">Google</div><div class="cert-date">📅 Apr 2025</div><div class="cert-id">ID : <span>SD09OSPITVJJ</span></div></div>
+        <div class="panel cert-card"><div style="font-size:1.6rem;">🛡️</div><div class="cert-name">SecNumAcadémie</div><div class="cert-issuer">ANSSI — French National Cybersecurity Agency</div><div class="cert-date">📅 Mar 2025</div></div>
+        <div class="panel cert-card"><div style="font-size:1.6rem;">📋</div><div class="cert-name">Managing Cybersecurity Risks with ISO 27001</div><div class="cert-issuer">LinkedIn Learning</div><div class="cert-date">📅 Jul 2024</div></div>
+        <div class="panel cert-card"><div style="font-size:1.6rem;">⚠️</div><div class="cert-name">Overview of Cybersecurity Threats</div><div class="cert-issuer">Project Management Institute</div><div class="cert-date">📅 Jul 2024</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="education" style="background: var(--bg2);">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-tag">// 05. Education</p>
+        <h2 class="section-title">My <span>studies</span></h2>
+        <div class="section-line"></div>
+      </div>
+      <div class="edu-list">
+        <div class="edu-card panel">
+          <div class="edu-dot">🎓</div>
+          <div class="edu-body">
+            <div class="edu-school">Université de Lorraine</div>
+            <div class="edu-degree">Master 2 — Computer Security, Networks and Virtual Architectures</div>
+            <div class="edu-dates">Sept 2024 – Sept 2026</div>
+            <div class="edu-desc">
+              <strong style="color:var(--accent)">Foundations</strong> — Computer Networking, Information Systems Security, Advanced Programming (OOP &amp; Design Patterns), Algorithms, Mathematical Logic.<br><br>
+              <strong style="color:var(--accent)">Cybersecurity</strong> — Network Supervision, Access Control, IoT/CPS Security, Web &amp; Protocol Security, Malware Analysis.<br><br>
+              <strong style="color:var(--accent)">Management &amp; Compliance</strong> — IT Project Management, GDPR, Personal Data Protection.<br><br>
+              <strong style="color:var(--accent)">Leadership</strong> — Elected Class Representative (Master's Delegate).
+            </div>
+            <div class="edu-tags"><span class="edu-tag">Network Security</span><span class="edu-tag">Malware Analysis</span><span class="edu-tag">IoT / CPS Security</span><span class="edu-tag">GDPR</span><span class="edu-tag">OOP</span><span class="edu-tag">Algorithms</span></div>
+          </div>
+        </div>
+        <div class="edu-card panel">
+          <div class="edu-dot">📐</div>
+          <div class="edu-body">
+            <div class="edu-school">Université de Lorraine</div>
+            <div class="edu-degree">Licence — Mathematics and Computer Science</div>
+            <div class="edu-dates">Jul 2021 – Aug 2024</div>
+            <div class="edu-desc">
+              <strong style="color:var(--accent)">Security &amp; Networking</strong> — Fundamentals of computer security, network protocols, and infrastructure.<br><br>
+              <strong style="color:var(--accent)">Programming &amp; Theory</strong> — Programming languages, compilation theory, and software architecture.<br><br>
+              <strong style="color:var(--accent)">Mathematics &amp; Logic</strong> — Advanced algorithms, discrete mathematics, and mathematical logic for computation.
+            </div>
+            <div class="edu-tags"><span class="edu-tag">Python</span><span class="edu-tag">C</span><span class="edu-tag">OOP</span><span class="edu-tag">Algorithms</span><span class="edu-tag">Networking</span><span class="edu-tag">Cybersecurity</span><span class="edu-tag">Data Analysis</span><span class="edu-tag">English</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="about">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-tag">// 06. Who am I</p>
+        <h2 class="section-title">About <span>me</span></h2>
+        <div class="section-line"></div>
+      </div>
+      <div class="about-grid">
+        <div class="about-text">
+          <p>I'm a <strong>cybersecurity enthusiast</strong> who loves building things from scratch. Since I was 6 years old — armed with nothing but scotch tape and paper — I've always had a builder's mindset. That same energy now goes into code, tools, and security challenges.</p>
+          <p>I believe in <strong>learning by doing</strong>. I test new things every single day, teaching myself through YouTube, docs, and hands-on tinkering. Every project is a new experiment — and I love every single one.</p>
+          <p>I enjoy <strong>every programming language</strong> I get my hands on — not because I master them all, but because each one teaches me a new way to think about solving problems.</p>
+          <div class="info-grid">
+            <div class="info-row"><span class="info-key">Based in</span><span class="info-val">France 🇫🇷 &amp; Luxembourg 🇱🇺</span></div>
+            <div class="info-row"><span class="info-key">Status</span><span class="info-val" style="color:var(--green)">● Student / Learning</span></div>
+            <div class="info-row"><span class="info-key">Focus</span><span class="info-val">Cybersecurity &amp; IT</span></div>
+            <div class="info-row"><span class="info-key">Mindset</span><span class="info-val">Build first, ask later</span></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="skill-card-title">Fun facts</div>
+          <div class="about-facts">
+            <div class="fact-row"><span class="fact-icon">🐕</span><span>Dog lover — no further explanation needed.</span></div>
+            <div class="fact-row"><span class="fact-icon">📎</span><span>Started building at age 6 with scotch tape &amp; paper. Big origami fan too.</span></div>
+            <div class="fact-row"><span class="fact-icon">💬</span><span>Genuinely love connecting with people — an optimistic mindset is the key.</span></div>
+            <div class="fact-row"><span class="fact-icon">🏋️</span><span>Gym sessions run longer than planned because the best conversations happen there.</span></div>
+            <div class="fact-row"><span class="fact-icon">📚</span><span>Hobbies: Gym · Running · Reading</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="skills" style="background: var(--bg2);">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-tag">// 07. Arsenal</p>
+        <h2 class="section-title">Technical <span>skills</span></h2>
+        <div class="section-line"></div>
+      </div>
+      <div class="learning-note">Currently building this skill set — updated as I learn</div>
+      <div class="skills-grid">
+        <div class="panel"><div class="skill-card-title">Cybersecurity</div><div class="skill-list"><span class="skill-tag">Network Security</span><span class="skill-tag">Linux</span><span class="skill-tag">Nmap</span><span class="skill-tag">Wireshark</span><span class="skill-tag">Burp Suite</span><span class="skill-tag">OWASP Top 10</span></div></div>
+        <div class="panel"><div class="skill-card-title">Programming</div><div class="skill-list"><span class="skill-tag">Python</span><span class="skill-tag">Bash</span><span class="skill-tag">HTML/CSS</span><span class="skill-tag">JavaScript</span><span class="skill-tag">Go</span><span class="skill-tag">C</span><span class="skill-tag">Git</span></div></div>
+        <div class="panel"><div class="skill-card-title">Infrastructure &amp; Homelab</div><div class="skill-list"><span class="skill-tag">Proxmox VE</span><span class="skill-tag">TrueNAS Scale</span><span class="skill-tag">Nginx</span><span class="skill-tag">WireGuard</span><span class="skill-tag">Pi-hole</span><span class="skill-tag">Cloudflare</span><span class="skill-tag">ZFS</span><span class="skill-tag">Linux CLI</span><span class="skill-tag">Docker</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-tag">// 08. Let's connect</p>
+        <h2 class="section-title">Get in <span>touch</span></h2>
+        <div class="section-line"></div>
+      </div>
+      <div class="contact-grid">
+        <div>
+          <p style="font-size:1.05rem; color:var(--text);">I genuinely love connecting with people. Whether it's about cybersecurity, a cool project idea, or just a good conversation — don't hesitate to reach out!</p>
+          <div class="contact-links">
+            <a href="mailto:contact@dolunay.fr" class="contact-link"><span class="contact-link-icon">✉️</span><span class="contact-link-label">contact@dolunay.fr</span></a>
+            <a href="https://github.com/Dolunay" target="_blank" class="contact-link"><span class="contact-link-icon">🐙</span><span class="contact-link-label">github.com/Dolunay</span></a>
+            <a href="https://www.linkedin.com/in/dolunay-m-0721b32a4/" target="_blank" class="contact-link"><span class="contact-link-icon">🔗</span><span class="contact-link-label">linkedin.com/in/dolunay-m-0721b32a4</span></a>
+          </div>
+        </div>
+        <div class="contact-form">
+          <div class="form-group"><label>Name</label><input type="text" placeholder="Your name" /></div>
+          <div class="form-group"><label>Email</label><input type="email" placeholder="your@email.com" /></div>
+          <div class="form-group"><label>Message</label><textarea rows="5" placeholder="Hey Dolunay, ..."></textarea></div>
+          <button class="btn btn-primary" style="align-self:flex-start;" onclick="alert('Connect this to Formspree or a backend 😉')">Send it ⟶</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <p>Built from scratch · Self-hosted on <span>Proxmox</span> · Deployed via <span>Cloudflare Tunnel</span> · <span>dolunay.fr</span></p>
+    </div>
+  </footer>
+
+</body>
+</html>

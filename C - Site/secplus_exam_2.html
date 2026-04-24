@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEC+ LAB — Dolunay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #070b10; --bg2: #0d1520; --panel: #0f1e2e; --panel2:#13283d; --border: #1a3a55; --border2:#2c5878;
+    --accent: #00e5ff; --accent2: #ff4d6d; --green: #39ff14; --yellow:#ffd60a; --purple:#b967ff;
+    --text: #c8dce8; --dim: #4a6a80; --dim2:#6a889e;
+    --font-mono: 'Share Tech Mono', monospace; --font-ui: 'Rajdhani', sans-serif;
+  }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-ui); font-size: 16px; line-height: 1.6; overflow-x: hidden; min-height: 100vh; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events: none; z-index: 0; opacity: .4; }
+  body::after { content: ''; position: fixed; inset: 0; background: repeating-linear-gradient(to bottom, transparent 0px, transparent 3px, rgba(0,0,0,.1) 3px, rgba(0,0,0,.1) 4px); pointer-events: none; z-index: 0; }
+  ::-webkit-scrollbar { width: 5px; height:5px; } ::-webkit-scrollbar-track { background: var(--bg); } ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
+
+  /* ═══ NAV ═══ */
+  nav { position: fixed; top: 0; width: 100%; background: rgba(7,11,16,.88); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); z-index: 100; padding: .9rem 0; }
+  nav .container { display: flex; justify-content: space-between; align-items: center; max-width:1400px; margin:0 auto; padding:0 2rem; }
+  .nav-logo { font-family: var(--font-mono); color: var(--accent); font-size: 1rem; letter-spacing: .1em; text-decoration:none; }
+  .nav-logo span { color: var(--accent2); }
+  .nav-links { display: flex; gap: 1.5rem; list-style: none; align-items:center; }
+  .nav-links a { font-family: var(--font-mono); font-size: .78rem; color: var(--dim); text-decoration: none; text-transform: uppercase; letter-spacing: .15em; transition: color .25s; }
+  .nav-links a:hover { color: var(--accent); }
+  .nav-links a.active { color: var(--accent); }
+  .nav-back { display:flex; align-items:center; gap:.5rem; color:var(--accent2) !important; }
+  .nav-back:hover { color: #fff !important; }
+
+  /* ═══ MAIN CONTAINER ═══ */
+  .main-wrap { position: relative; z-index: 1; padding-top: 80px; min-height: 100vh; }
+  .container { max-width: 1400px; margin: 0 auto; padding: 0 2rem; }
+
+  /* ═══ SCREENS ═══ */
+  .screen { display: none; animation: screenFade .5s ease; }
+  .screen.active { display: block; }
+  @keyframes screenFade { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ═══════════════════════════════════════════════
+     WELCOME / DASHBOARD SCREEN
+  ═══════════════════════════════════════════════ */
+  .welcome-hero { padding: 3rem 0 2rem; position: relative; }
+  .welcome-hero::before { content: ''; position: absolute; inset: 0; background-image: linear-gradient(rgba(0,229,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,.04) 1px, transparent 1px); background-size: 60px 60px; animation: gridShift 20s linear infinite; z-index:0; }
+  @keyframes gridShift { 0%{background-position:0 0} 100%{background-position:60px 60px} }
+  .welcome-hero-content { position: relative; z-index: 1; }
+  .welcome-tag { font-family: var(--font-mono); font-size: .8rem; color: var(--green); letter-spacing: .2em; text-transform: uppercase; margin-bottom: 1rem; display: flex; align-items: center; gap: .6rem; }
+  .welcome-tag::before { content: ''; width: 8px; height: 8px; background: var(--green); border-radius: 50%; box-shadow: 0 0 10px var(--green); animation: blink 2s step-end infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .welcome-title { font-family: var(--font-ui); font-size: clamp(2.2rem, 6vw, 4.5rem); font-weight: 700; line-height: 1; color: #fff; margin-bottom: .5rem; letter-spacing: -.02em; }
+  .welcome-title .accent { color: var(--accent); }
+  .welcome-title .glitch { position: relative; display: inline-block; }
+  .welcome-title .glitch::before, .welcome-title .glitch::after {
+    content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  }
+  .welcome-title .glitch::before { color: var(--accent2); clip-path: inset(0 0 50% 0); transform: translate(-2px, -1px); opacity: .7; animation: glitch1 3s infinite; }
+  .welcome-title .glitch::after { color: var(--accent); clip-path: inset(50% 0 0 0); transform: translate(2px, 1px); opacity: .7; animation: glitch2 3s infinite; }
+  @keyframes glitch1 { 0%,90%,100%{transform:translate(-2px,-1px)} 92%{transform:translate(-4px,2px)} 94%{transform:translate(0,-3px)} 96%{transform:translate(-3px,1px)} }
+  @keyframes glitch2 { 0%,90%,100%{transform:translate(2px,1px)} 92%{transform:translate(4px,-2px)} 94%{transform:translate(0,3px)} 96%{transform:translate(3px,-1px)} }
+  .welcome-subtitle { font-family: var(--font-mono); font-size: 1rem; color: var(--dim); margin-top: 1rem; margin-bottom: 3rem; max-width: 720px; line-height: 1.8; }
+  .welcome-subtitle .hl { color: var(--accent); }
+
+  /* ═══ STATS STRIP ═══ */
+  .stats-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 3rem; }
+  .stat-box { background: var(--panel); border: 1px solid var(--border); padding: 1.2rem 1.5rem; position: relative; overflow: hidden; transition: all .3s; }
+  .stat-box::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: .6; }
+  .stat-box:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,229,255,.1); }
+  .stat-label { font-family: var(--font-mono); font-size: .7rem; color: var(--dim); letter-spacing: .15em; text-transform: uppercase; margin-bottom: .4rem; }
+  .stat-value { font-family: var(--font-ui); font-size: 2rem; font-weight: 700; color: var(--accent); line-height: 1; }
+  .stat-unit { font-family: var(--font-mono); font-size: .8rem; color: var(--dim); margin-left: .3rem; }
+
+  /* ═══ CONFIG PANEL ═══ */
+  .config-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 2rem; margin-bottom: 3rem; }
+  @media (max-width: 900px) { .config-grid { grid-template-columns: 1fr; } }
+  .config-panel { background: var(--panel); border: 1px solid var(--border); padding: 2rem; position: relative; }
+  .config-panel::before { content: ''; position: absolute; top: -1px; left: -1px; right: -1px; height: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+  .panel-title { font-family: var(--font-mono); font-size: .8rem; color: var(--accent); letter-spacing: .2em; text-transform: uppercase; margin-bottom: .5rem; display: flex; align-items: center; gap: .5rem; }
+  .panel-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--border), transparent); }
+  .panel-h { font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: 1.5rem; }
+  .domain-breakdown { display: flex; flex-direction: column; gap: .75rem; }
+  .dom-row { display: grid; grid-template-columns: 1fr auto auto; gap: 1rem; align-items: center; padding: .75rem 1rem; background: var(--bg2); border-left: 3px solid; font-family: var(--font-mono); font-size: .85rem; transition: all .2s; }
+  .dom-row:hover { transform: translateX(4px); background: var(--panel2); }
+  .dom-row.d1 { border-color: var(--accent); }
+  .dom-row.d2 { border-color: var(--accent2); }
+  .dom-row.d3 { border-color: var(--green); }
+  .dom-row.d4 { border-color: var(--yellow); }
+  .dom-row.d5 { border-color: var(--purple); }
+  .dom-row .dom-name { color: #fff; }
+  .dom-row .dom-count { color: var(--dim2); font-size: .75rem; }
+  .dom-row .dom-pct { font-family: var(--font-mono); padding: .15rem .6rem; font-size: .7rem; border-radius: 2px; }
+  .d1 .dom-pct { background: rgba(0,229,255,.1); color: var(--accent); }
+  .d2 .dom-pct { background: rgba(255,77,109,.1); color: var(--accent2); }
+  .d3 .dom-pct { background: rgba(57,255,20,.1); color: var(--green); }
+  .d4 .dom-pct { background: rgba(255,214,10,.1); color: var(--yellow); }
+  .d5 .dom-pct { background: rgba(185,103,255,.1); color: var(--purple); }
+
+  .mode-selector { display: grid; gap: 1rem; }
+  .mode-card { background: var(--bg2); border: 1px solid var(--border); padding: 1.2rem; cursor: pointer; transition: all .2s; position: relative; }
+  .mode-card:hover { border-color: var(--accent); background: var(--panel2); }
+  .mode-card.selected { border-color: var(--accent); background: rgba(0,229,255,.05); box-shadow: inset 0 0 0 1px var(--accent); }
+  .mode-card.selected::after { content: '●'; position: absolute; top: 1rem; right: 1rem; color: var(--accent); animation: blink 1.5s step-end infinite; }
+  .mode-label { font-family: var(--font-mono); font-size: .7rem; color: var(--dim); letter-spacing: .15em; text-transform: uppercase; margin-bottom: .25rem; }
+  .mode-name { font-weight: 700; color: #fff; font-size: 1.1rem; margin-bottom: .3rem; }
+  .mode-desc { font-size: .85rem; color: var(--text); }
+
+  .start-btn { display: inline-flex; align-items: center; gap: .75rem; font-family: var(--font-mono); font-size: .9rem; letter-spacing: .15em; text-transform: uppercase; padding: 1rem 2.5rem; border: none; background: var(--accent); color: var(--bg); cursor: pointer; transition: all .25s; position: relative; overflow: hidden; margin-top: 1rem; }
+  .start-btn:hover { background: #fff; box-shadow: 0 0 32px var(--accent); transform: translateY(-2px); }
+  .start-btn::before { content: '> '; font-weight: bold; }
+  .start-btn-secondary { background:transparent; color:var(--accent); border:1px solid var(--accent); margin-left:.5rem; }
+  .start-btn-secondary:hover { background:rgba(0,229,255,.1); color:var(--accent); box-shadow:0 0 16px rgba(0,229,255,.3); }
+
+  /* ═══════════════════════════════════════════════
+     EXAM SCREEN
+  ═══════════════════════════════════════════════ */
+  .exam-top { background: rgba(7,11,16,.95); backdrop-filter: blur(10px); border: 1px solid var(--border); margin-bottom: 1.5rem; padding: 1rem 1.5rem; display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+  .exam-id { font-family: var(--font-mono); font-size: .75rem; color: var(--dim); letter-spacing: .1em; }
+  .exam-id .pulse { color: var(--green); margin-right: .4rem; animation: blink 2s step-end infinite; }
+  .timer-display { display: flex; align-items: center; gap: .6rem; font-family: var(--font-mono); font-size: 1.3rem; font-weight: 700; color: var(--accent); padding: .4rem 1rem; border: 1px solid var(--accent); background: rgba(0,229,255,.05); letter-spacing: .05em; transition: all .3s; }
+  .timer-display.warning { color: var(--yellow); border-color: var(--yellow); background: rgba(255,214,10,.05); }
+  .timer-display.danger { color: var(--accent2); border-color: var(--accent2); background: rgba(255,77,109,.08); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(255,77,109,.4)} 50%{box-shadow:0 0 0 12px rgba(255,77,109,0)} }
+  .progress-wrap { flex: 1; min-width: 180px; }
+  .progress-info { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: .72rem; color: var(--dim); margin-bottom: .35rem; letter-spacing: .08em; }
+  .progress-track { height: 4px; background: var(--border); position: relative; overflow: hidden; }
+  .progress-bar { height: 100%; background: linear-gradient(90deg, var(--accent), var(--green)); width: 0%; transition: width .4s ease; position: relative; }
+  .progress-bar::after { content: ''; position: absolute; top: 0; right: 0; width: 30px; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,.4)); animation: shimmer 2s linear infinite; }
+  @keyframes shimmer { 0%{transform:translateX(30px)} 100%{transform:translateX(0)} }
+  .exam-actions { display: flex; gap: .5rem; }
+  .exam-btn-mini { font-family: var(--font-mono); font-size: .7rem; padding: .4rem .9rem; background: transparent; color: var(--dim); border: 1px solid var(--border); cursor: pointer; letter-spacing: .1em; text-transform: uppercase; transition: all .2s; }
+  .exam-btn-mini:hover { color: var(--accent); border-color: var(--accent); }
+  .exam-btn-mini.danger:hover { color: var(--accent2); border-color: var(--accent2); }
+
+  /* ═══ EXAM LAYOUT ═══ */
+  .exam-layout { display: grid; grid-template-columns: 240px 1fr; gap: 1.5rem; }
+  @media (max-width: 1000px) { .exam-layout { grid-template-columns: 1fr; } .exam-sidebar { order: 2; position: static !important; } }
+
+  .exam-sidebar { background: var(--panel); border: 1px solid var(--border); padding: 1.2rem; position: sticky; top: 100px; max-height: calc(100vh - 120px); overflow-y: auto; }
+  .sidebar-h { font-family: var(--font-mono); font-size: .7rem; color: var(--dim); letter-spacing: .15em; text-transform: uppercase; margin-bottom: 1rem; padding-bottom: .5rem; border-bottom: 1px solid var(--border); }
+  .qgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+  .qdot { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: .7rem; border: 1px solid var(--border); background: var(--bg2); color: var(--dim); cursor: pointer; transition: all .15s; }
+  .qdot:hover { border-color: var(--accent); color: var(--accent); }
+  .qdot.current { background: var(--accent); color: var(--bg); border-color: var(--accent); box-shadow: 0 0 12px var(--accent); font-weight: bold; }
+  .qdot.answered { border-color: var(--green); color: var(--green); background: rgba(57,255,20,.08); }
+  .qdot.flagged { border-color: var(--yellow); color: var(--yellow); background: rgba(255,214,10,.08); }
+  .qdot.answered.flagged { background: linear-gradient(135deg, rgba(57,255,20,.12), rgba(255,214,10,.12)); border-color: var(--yellow); }
+  .qdot.current.answered, .qdot.current.flagged { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  .legend-box { margin-top: 1.2rem; padding-top: 1rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: .5rem; }
+  .legend-i { display: flex; align-items: center; gap: .6rem; font-family: var(--font-mono); font-size: .7rem; color: var(--dim); }
+  .legend-sq { width: 14px; height: 14px; border: 1px solid; }
+  .legend-current { background: var(--accent); border-color: var(--accent); }
+  .legend-answered { border-color: var(--green); background: rgba(57,255,20,.08); }
+  .legend-flagged { border-color: var(--yellow); background: rgba(255,214,10,.08); }
+  .legend-empty { background: var(--bg2); border-color: var(--border); }
+
+  /* ═══ QUESTION AREA ═══ */
+  .exam-main { background: var(--panel); border: 1px solid var(--border); padding: 2rem 2.5rem; min-height: 500px; position: relative; }
+  .exam-main::before { content: ''; position: absolute; top: -1px; left: -1px; right: -1px; height: 3px; background: linear-gradient(90deg, var(--accent) 0%, var(--accent2) 50%, var(--green) 100%); }
+  .q-meta-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .q-num-tag { font-family: var(--font-mono); font-size: .75rem; color: var(--accent); padding: .3rem .8rem; border: 1px solid var(--accent); background: rgba(0,229,255,.05); letter-spacing: .1em; }
+  .q-domain-tag { font-family: var(--font-mono); font-size: .68rem; padding: .3rem .7rem; border: 1px solid; letter-spacing: .1em; text-transform: uppercase; }
+  .dtag-1 { color: var(--accent); border-color: var(--accent); background: rgba(0,229,255,.05); }
+  .dtag-2 { color: var(--accent2); border-color: var(--accent2); background: rgba(255,77,109,.05); }
+  .dtag-3 { color: var(--green); border-color: var(--green); background: rgba(57,255,20,.05); }
+  .dtag-4 { color: var(--yellow); border-color: var(--yellow); background: rgba(255,214,10,.05); }
+  .dtag-5 { color: var(--purple); border-color: var(--purple); background: rgba(185,103,255,.05); }
+  .q-pbq-tag { color: #ff9f1c; border-color: #ff9f1c; background: rgba(255,159,28,.05); font-family: var(--font-mono); font-size: .68rem; padding: .3rem .7rem; border: 1px solid; letter-spacing: .1em; text-transform: uppercase; }
+  .flag-btn { margin-left: auto; font-family: var(--font-mono); font-size: .72rem; padding: .4rem .9rem; background: transparent; color: var(--dim); border: 1px solid var(--border); cursor: pointer; letter-spacing: .08em; text-transform: uppercase; transition: all .2s; }
+  .flag-btn:hover, .flag-btn.on { color: var(--yellow); border-color: var(--yellow); background: rgba(255,214,10,.08); }
+
+  .q-stem { font-size: 1.05rem; line-height: 1.7; color: var(--text); padding: 1.5rem; background: var(--bg2); border-left: 3px solid var(--accent); margin-bottom: 1.5rem; position: relative; }
+  .q-stem strong { color: var(--accent); }
+  .q-stem code { font-family: var(--font-mono); font-size: .9em; background: var(--bg); border: 1px solid var(--border); padding: 1px 8px; color: var(--green); }
+  .q-stem pre { font-family: var(--font-mono); font-size: .85rem; background: var(--bg); border: 1px solid var(--border); padding: 1rem; overflow-x: auto; color: var(--green); margin-top: .8rem; line-height: 1.5; }
+
+  .multi-note { font-family: var(--font-mono); font-size: .7rem; color: var(--yellow); background: rgba(255,214,10,.08); border: 1px solid var(--yellow); padding: .4rem .8rem; margin-bottom: 1rem; display: inline-block; letter-spacing: .1em; text-transform: uppercase; }
+
+  .options-list { list-style: none; display: flex; flex-direction: column; gap: .6rem; }
+  .opt-item { display: flex; gap: 1rem; padding: 1rem 1.2rem; background: var(--bg2); border: 1px solid var(--border); cursor: pointer; transition: all .15s; align-items: flex-start; position: relative; }
+  .opt-item:hover { border-color: var(--accent); background: var(--panel2); transform: translateX(3px); }
+  .opt-item.selected { border-color: var(--accent); background: rgba(0,229,255,.08); box-shadow: inset 0 0 0 1px var(--accent); }
+  .opt-item.selected::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent); }
+  .opt-letter { font-family: var(--font-mono); font-size: .85rem; font-weight: 700; color: var(--dim); min-width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); background: var(--bg); flex-shrink: 0; transition: all .15s; }
+  .opt-item:hover .opt-letter { color: var(--accent); border-color: var(--accent); }
+  .opt-item.selected .opt-letter { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  .opt-text { color: var(--text); font-size: .98rem; line-height: 1.55; }
+
+  /* PBQ DRAG DROP */
+  .pbq-grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+  @media (max-width: 700px) { .pbq-grid { grid-template-columns: 1fr; } }
+  .pbq-panel { background: var(--bg2); border: 1px solid var(--border); padding: 1.2rem; }
+  .pbq-panel h4 { font-family: var(--font-mono); font-size: .72rem; color: var(--accent); letter-spacing: .15em; text-transform: uppercase; margin-bottom: .9rem; padding-bottom: .5rem; border-bottom: 1px dashed var(--border); }
+  .drag-item { padding: .6rem 1rem; background: var(--panel); border: 1px solid var(--border); font-family: var(--font-mono); font-size: .85rem; color: var(--text); cursor: grab; margin-bottom: .4rem; transition: all .15s; user-select: none; }
+  .drag-item:hover { border-color: var(--accent); color: var(--accent); }
+  .drag-item.dragging { opacity: .35; }
+  .drag-item.placed { display: none; }
+  .drop-zone { min-height: 42px; border: 1px dashed var(--border2); padding: .6rem 1rem; margin-bottom: .5rem; display: flex; align-items: center; gap: .8rem; background: rgba(7,11,16,.4); transition: all .15s; }
+  .drop-zone.dragover { border-color: var(--accent); border-style: solid; background: rgba(0,229,255,.05); }
+  .zone-label { font-family: var(--font-mono); font-size: .78rem; color: var(--dim); flex: 1; }
+  .placed-item { padding: .3rem .7rem; background: rgba(0,229,255,.12); border: 1px solid var(--accent); color: var(--accent); font-family: var(--font-mono); font-size: .78rem; cursor: pointer; }
+
+  /* PBQ ORDERING */
+  .order-list { list-style: none; display: flex; flex-direction: column; gap: .4rem; }
+  .order-item { display: flex; align-items: center; gap: .9rem; padding: .75rem 1rem; background: var(--bg2); border: 1px solid var(--border); cursor: grab; font-size: .95rem; transition: all .15s; }
+  .order-item:hover { border-color: var(--accent); }
+  .order-item.drag-over { border-color: var(--accent); background: rgba(0,229,255,.08); transform: scale(1.02); }
+  .order-num { min-width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: var(--panel); border: 1px solid var(--border); font-family: var(--font-mono); font-size: .8rem; color: var(--accent); }
+  .order-handle { color: var(--dim); font-size: 1rem; cursor: grab; margin-left: auto; }
+
+  /* NAVIGATION */
+  .q-nav { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); display: flex; gap: .8rem; align-items: center; flex-wrap: wrap; }
+  .nav-btn { font-family: var(--font-mono); font-size: .8rem; padding: .7rem 1.5rem; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; transition: all .2s; border: 1px solid; }
+  .nav-prev { background: transparent; color: var(--dim); border-color: var(--border); }
+  .nav-prev:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); }
+  .nav-prev:disabled { opacity: .3; cursor: not-allowed; }
+  .nav-next { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 700; }
+  .nav-next:hover { background: #fff; box-shadow: 0 0 20px var(--accent); }
+  .nav-submit { background: var(--green); color: var(--bg); border-color: var(--green); font-weight: 700; }
+  .nav-submit:hover { background: #fff; box-shadow: 0 0 20px var(--green); }
+  .nav-counter { margin-left: auto; font-family: var(--font-mono); font-size: .78rem; color: var(--dim); }
+
+  /* MODAL */
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.8); backdrop-filter: blur(6px); z-index: 500; align-items: center; justify-content: center; padding: 1rem; }
+  .modal-bg.on { display: flex; animation: modalFade .25s ease; }
+  @keyframes modalFade { from{opacity:0} to{opacity:1} }
+  .modal-box { background: var(--panel); border: 1px solid var(--border); max-width: 540px; width: 100%; padding: 2rem 2.2rem; position: relative; }
+  .modal-box::before { content: ''; position: absolute; top: -1px; left: -1px; right: -1px; height: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+  .modal-h { font-family: var(--font-mono); font-size: .85rem; color: var(--accent); letter-spacing: .15em; text-transform: uppercase; margin-bottom: .4rem; }
+  .modal-title { font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: 1rem; }
+  .modal-desc { color: var(--text); font-size: .95rem; line-height: 1.7; margin-bottom: 1.5rem; }
+  .modal-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .6rem; margin-bottom: 1.5rem; }
+  .mstat { background: var(--bg2); border: 1px solid var(--border); padding: .9rem; text-align: center; }
+  .mstat-v { font-family: var(--font-mono); font-size: 1.6rem; font-weight: 700; line-height: 1; }
+  .mstat-l { font-family: var(--font-mono); font-size: .65rem; color: var(--dim); letter-spacing: .1em; text-transform: uppercase; margin-top: .3rem; }
+  .modal-actions { display: flex; gap: .6rem; justify-content: flex-end; flex-wrap: wrap; }
+  .m-cancel { background: transparent; color: var(--dim); border: 1px solid var(--border); padding: .7rem 1.4rem; font-family: var(--font-mono); font-size: .78rem; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; transition: all .2s; }
+  .m-cancel:hover { color: var(--accent); border-color: var(--accent); }
+  .m-confirm { background: var(--accent); color: var(--bg); border: 1px solid var(--accent); padding: .7rem 1.4rem; font-family: var(--font-mono); font-size: .78rem; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; font-weight: 700; transition: all .2s; }
+  .m-confirm:hover { background: #fff; box-shadow: 0 0 20px var(--accent); }
+  .m-danger { background: var(--accent2); border-color: var(--accent2); }
+  .m-danger:hover { background: #fff; box-shadow: 0 0 20px var(--accent2); }
+
+  /* ═══════════════════════════════════════════════
+     RESULTS SCREEN
+  ═══════════════════════════════════════════════ */
+  .results-wrap { padding: 2rem 0 4rem; }
+  .results-hero { position: relative; padding: 2rem 0 3rem; text-align: center; overflow: hidden; }
+  .results-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(0,229,255,.08), transparent 70%); z-index: 0; }
+  .results-hero.fail::before { background: radial-gradient(ellipse at center, rgba(255,77,109,.08), transparent 70%); }
+  .verdict-tag { position: relative; z-index: 1; display: inline-block; font-family: var(--font-mono); font-size: .9rem; letter-spacing: .4em; padding: .6rem 2rem; border: 1px solid; margin-bottom: 1.5rem; animation: verdictIn .6s ease; }
+  .verdict-tag.pass { color: var(--green); border-color: var(--green); background: rgba(57,255,20,.05); box-shadow: 0 0 30px rgba(57,255,20,.2); }
+  .verdict-tag.fail { color: var(--accent2); border-color: var(--accent2); background: rgba(255,77,109,.05); box-shadow: 0 0 30px rgba(255,77,109,.2); }
+  @keyframes verdictIn { from{opacity:0;transform:translateY(-20px) scale(.9)} to{opacity:1;transform:translateY(0) scale(1)} }
+  .score-display { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 3rem; margin-bottom: 2rem; flex-wrap: wrap; }
+  .score-ring-wrap { position: relative; width: 200px; height: 200px; }
+  .ring-svg { transform: rotate(-90deg); filter: drop-shadow(0 0 8px currentColor); }
+  .ring-track { fill: none; stroke: var(--border); stroke-width: 6; }
+  .ring-prog { fill: none; stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 2s cubic-bezier(.25,.1,.25,1); }
+  .ring-prog.pass { stroke: var(--green); }
+  .ring-prog.fail { stroke: var(--accent2); }
+  .ring-inner { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .ring-val { font-family: var(--font-ui); font-size: 3.2rem; font-weight: 700; line-height: 1; }
+  .ring-val.pass { color: var(--green); }
+  .ring-val.fail { color: var(--accent2); }
+  .ring-max { font-family: var(--font-mono); font-size: .75rem; color: var(--dim); letter-spacing: .1em; margin-top: .3rem; }
+  .score-details { text-align: left; max-width: 320px; }
+  .sd-big { font-family: var(--font-mono); font-size: 1.3rem; color: #fff; margin-bottom: .3rem; }
+  .sd-big.pass { color: var(--green); }
+  .sd-big.fail { color: var(--accent2); }
+  .sd-sub { color: var(--text); font-size: .95rem; line-height: 1.6; margin-bottom: .8rem; }
+  .sd-meta { font-family: var(--font-mono); font-size: .75rem; color: var(--dim); letter-spacing: .08em; }
+
+  .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 3rem; }
+  .rstat { background: var(--panel); border: 1px solid var(--border); padding: 1.2rem; text-align: center; position: relative; transition: all .25s; }
+  .rstat:hover { transform: translateY(-3px); border-color: var(--accent); box-shadow: 0 8px 24px rgba(0,229,255,.08); }
+  .rstat::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: currentColor; opacity: .6; }
+  .rstat-v { font-family: var(--font-mono); font-size: 1.8rem; font-weight: 700; line-height: 1; margin-bottom: .3rem; }
+  .rstat-l { font-family: var(--font-mono); font-size: .65rem; color: var(--dim); letter-spacing: .12em; text-transform: uppercase; }
+
+  /* ═══ ANALYSIS SECTIONS ═══ */
+  .analysis-section { margin-bottom: 3rem; }
+  .as-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: .8rem; border-bottom: 1px solid var(--border); }
+  .as-num { font-family: var(--font-mono); font-size: .75rem; color: var(--accent); letter-spacing: .15em; }
+  .as-title { font-size: 1.4rem; font-weight: 700; color: #fff; }
+  .as-title .acc { color: var(--accent); }
+
+  /* DOMAIN PERFORMANCE */
+  .domain-perf-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 2rem; }
+  @media (max-width: 900px) { .domain-perf-grid { grid-template-columns: 1fr; } }
+  .radar-wrap { background: var(--panel); border: 1px solid var(--border); padding: 1.5rem; text-align: center; position: relative; }
+  .radar-wrap h4 { font-family: var(--font-mono); font-size: .75rem; color: var(--dim); letter-spacing: .15em; text-transform: uppercase; margin-bottom: 1rem; }
+  .domain-bars { display: flex; flex-direction: column; gap: 1rem; }
+  .dbar-row { background: var(--panel); border: 1px solid var(--border); padding: 1rem 1.2rem; position: relative; overflow: hidden; }
+  .dbar-row::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: currentColor; }
+  .dbar-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: .6rem; }
+  .dbar-name { font-weight: 700; color: #fff; font-size: .95rem; }
+  .dbar-sub { font-family: var(--font-mono); font-size: .7rem; color: var(--dim); margin-top: .15rem; }
+  .dbar-val { font-family: var(--font-mono); font-size: 1.3rem; font-weight: 700; line-height: 1; }
+  .dbar-track { height: 6px; background: var(--bg); position: relative; overflow: hidden; }
+  .dbar-fill { height: 100%; transition: width 1.5s cubic-bezier(.25,.1,.25,1); position: relative; }
+  .dbar-fill::after { content: ''; position: absolute; top: 0; right: 0; width: 40%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,.3)); }
+  .dbar-meta { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: .68rem; color: var(--dim); margin-top: .5rem; }
+  .dpass { color: var(--green); }
+  .dwarn { color: var(--yellow); }
+  .dfail { color: var(--accent2); }
+
+  /* WEAK TOPICS */
+  .weak-topics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+  .topic-card { background: var(--panel); border: 1px solid var(--border); padding: 1.3rem; transition: all .25s; position: relative; }
+  .topic-card:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0,0,0,.3); }
+  .topic-card.critical { border-color: var(--accent2); }
+  .topic-card.critical::before { content: 'CRITICAL'; position: absolute; top: 8px; right: 8px; font-family: var(--font-mono); font-size: .6rem; color: var(--accent2); letter-spacing: .15em; }
+  .topic-card.warning { border-color: var(--yellow); }
+  .topic-card.warning::before { content: 'REVIEW'; position: absolute; top: 8px; right: 8px; font-family: var(--font-mono); font-size: .6rem; color: var(--yellow); letter-spacing: .15em; }
+  .topic-h { display: flex; justify-content: space-between; align-items: center; margin-bottom: .7rem; }
+  .topic-name { font-weight: 700; color: #fff; font-size: 1rem; }
+  .topic-score { font-family: var(--font-mono); font-size: .85rem; padding: .2rem .6rem; background: var(--bg2); }
+  .topic-score.fail { color: var(--accent2); border: 1px solid var(--accent2); }
+  .topic-score.warn { color: var(--yellow); border: 1px solid var(--yellow); }
+  .topic-stats { font-family: var(--font-mono); font-size: .72rem; color: var(--dim); margin-bottom: .9rem; letter-spacing: .05em; }
+  .topic-advice { font-size: .88rem; color: var(--text); line-height: 1.6; padding-top: .8rem; border-top: 1px dashed var(--border); }
+  .topic-advice strong { color: var(--accent); }
+
+  /* STUDY PLAN */
+  .study-plan { background: var(--panel); border: 1px solid var(--border); padding: 2rem; position: relative; }
+  .study-plan::before { content: ''; position: absolute; top: -1px; left: -1px; right: -1px; height: 2px; background: linear-gradient(90deg, var(--accent2), var(--yellow), var(--green)); }
+  .plan-intro { font-family: var(--font-mono); font-size: .82rem; color: var(--dim); margin-bottom: 1.5rem; padding: .8rem 1rem; background: var(--bg2); border-left: 2px solid var(--accent); }
+  .plan-phase { margin-bottom: 1.5rem; padding: 1.2rem; background: var(--bg2); border: 1px solid var(--border); border-left: 3px solid; }
+  .plan-phase.priority1 { border-left-color: var(--accent2); }
+  .plan-phase.priority2 { border-left-color: var(--yellow); }
+  .plan-phase.priority3 { border-left-color: var(--green); }
+  .phase-h { display: flex; align-items: center; gap: .8rem; margin-bottom: .8rem; }
+  .phase-n { font-family: var(--font-mono); font-size: .7rem; padding: .25rem .7rem; color: var(--bg); font-weight: 700; letter-spacing: .1em; }
+  .phase-n.p1 { background: var(--accent2); }
+  .phase-n.p2 { background: var(--yellow); }
+  .phase-n.p3 { background: var(--green); }
+  .phase-title { font-weight: 700; color: #fff; font-size: 1.05rem; }
+  .phase-body { font-size: .92rem; color: var(--text); line-height: 1.7; }
+  .phase-body ul { margin-top: .7rem; padding-left: 1.2rem; }
+  .phase-body ul li { margin-bottom: .3rem; }
+  .phase-body strong { color: var(--accent); }
+
+  /* RESOURCES */
+  .resources-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .resource-card { background: var(--bg2); border: 1px solid var(--border); padding: 1rem 1.2rem; transition: all .2s; text-decoration: none; color: inherit; display: block; }
+  .resource-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .resource-type { font-family: var(--font-mono); font-size: .65rem; color: var(--accent); letter-spacing: .15em; text-transform: uppercase; margin-bottom: .3rem; }
+  .resource-name { font-weight: 700; color: #fff; font-size: .95rem; margin-bottom: .2rem; }
+  .resource-desc { font-size: .8rem; color: var(--dim); }
+
+  /* QUESTION REVIEW */
+  .review-filters { display: flex; gap: .5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .rfilter { font-family: var(--font-mono); font-size: .72rem; padding: .4rem 1rem; background: transparent; color: var(--dim); border: 1px solid var(--border); cursor: pointer; letter-spacing: .1em; text-transform: uppercase; transition: all .15s; }
+  .rfilter:hover { color: var(--accent); border-color: var(--accent); }
+  .rfilter.active { color: var(--bg); background: var(--accent); border-color: var(--accent); font-weight: 700; }
+  .review-list { display: flex; flex-direction: column; gap: .6rem; max-height: 600px; overflow-y: auto; padding-right: .5rem; }
+  .review-q { background: var(--panel); border: 1px solid var(--border); padding: 1rem 1.2rem; cursor: pointer; transition: all .15s; }
+  .review-q:hover { border-color: var(--accent); }
+  .rq-head { display: flex; align-items: center; gap: .8rem; margin-bottom: .4rem; flex-wrap: wrap; }
+  .rq-n { font-family: var(--font-mono); font-size: .72rem; color: var(--dim); }
+  .rq-verdict { font-family: var(--font-mono); font-size: .65rem; padding: .2rem .6rem; letter-spacing: .1em; text-transform: uppercase; border: 1px solid; }
+  .rqv-right { color: var(--green); border-color: var(--green); background: rgba(57,255,20,.08); }
+  .rqv-wrong { color: var(--accent2); border-color: var(--accent2); background: rgba(255,77,109,.08); }
+  .rqv-skip { color: var(--dim); border-color: var(--border); background: var(--bg2); }
+  .rq-dtag { font-family: var(--font-mono); font-size: .62rem; padding: .15rem .5rem; letter-spacing: .08em; text-transform: uppercase; border: 1px solid; }
+  .rq-stem { color: var(--text); font-size: .92rem; line-height: 1.5; }
+  .rq-detail { display: none; margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed var(--border); }
+  .rq-detail.open { display: block; animation: rqFade .25s ease; }
+  @keyframes rqFade { from{opacity:0} to{opacity:1} }
+  .rq-your { font-size: .88rem; color: var(--text); margin-bottom: .4rem; }
+  .rq-your .lab { font-family: var(--font-mono); color: var(--dim); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; margin-right: .5rem; }
+  .rq-correct-ans { font-size: .88rem; color: var(--green); margin-bottom: .8rem; }
+  .rq-correct-ans .lab { font-family: var(--font-mono); color: var(--green); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; margin-right: .5rem; }
+  .rq-explain { font-size: .88rem; color: var(--text); line-height: 1.7; padding: .9rem 1rem; background: var(--bg2); border-left: 2px solid var(--accent); }
+  .rq-explain .lab { font-family: var(--font-mono); color: var(--accent); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; margin-right: .5rem; display: block; margin-bottom: .4rem; }
+  .rq-topics { font-family: var(--font-mono); font-size: .68rem; color: var(--dim); margin-top: .6rem; }
+  .rq-topics span { background: var(--bg); border: 1px solid var(--border); padding: .15rem .5rem; margin-right: .3rem; display: inline-block; }
+
+  .bottom-actions { display: flex; justify-content: center; gap: 1rem; margin-top: 3rem; flex-wrap: wrap; }
+  .ba-btn { font-family: var(--font-mono); font-size: .85rem; padding: .9rem 2rem; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; border: 1px solid; transition: all .2s; text-decoration: none; }
+  .ba-primary { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 700; }
+  .ba-primary:hover { background: #fff; box-shadow: 0 0 24px var(--accent); }
+  .ba-outline { background: transparent; color: var(--accent); border-color: var(--accent); }
+  .ba-outline:hover { background: rgba(0,229,255,.08); box-shadow: 0 0 16px rgba(0,229,255,.2); }
+
+  /* Terminal overlay */
+  .term-overlay { display:none; position:fixed; inset:0; background:rgba(7,11,16,.98); z-index:1000; align-items:center; justify-content:center; padding:2rem; }
+  .term-overlay.on { display:flex; }
+  .term-box { font-family:var(--font-mono); max-width:700px; width:100%; padding:2rem; background:#000; border:1px solid var(--green); box-shadow:0 0 40px rgba(57,255,20,.2); position:relative; min-height:260px; }
+  .term-box::before { content:''; position:absolute; top:0; left:0; right:0; height:20px; background:var(--bg2); border-bottom:1px solid var(--border); }
+  .term-box::after { content:'● ● ●'; position:absolute; top:0; left:8px; color:var(--dim); font-size:.6rem; line-height:20px; letter-spacing:2px; }
+  .term-content { margin-top:20px; color:var(--green); font-size:.9rem; line-height:1.7; }
+  .term-line { opacity:0; }
+  .term-line.show { opacity:1; animation: termType .4s ease; }
+  @keyframes termType { from{opacity:0;transform:translateY(-2px)} to{opacity:1;transform:translateY(0)} }
+  .term-prompt::before { content:'$ '; color:var(--accent); }
+  .term-ok { color:var(--green); }
+  .term-info { color:var(--accent); }
+  .term-warn { color:var(--yellow); }
+
+  @media (max-width: 720px) {
+    .nav-links { gap: .8rem; font-size: .7rem; }
+    .nav-links a { font-size: .7rem; letter-spacing: .08em; }
+    .exam-main { padding: 1.3rem 1.1rem; }
+    .stats-strip { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ NAV ═══ -->
+<nav>
+  <div class="container">
+    <a href="index.html" class="nav-logo">&gt; dolunay<span>@</span>secplus</a>
+    <ul class="nav-links">
+      <li><a href="index.html" class="nav-back">← PORTFOLIO</a></li>
+      <li><a href="#" class="active" onclick="goHome();return false;">DASHBOARD</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="main-wrap">
+
+<!-- ═══════════════════════════════════════════════
+     WELCOME / DASHBOARD
+═══════════════════════════════════════════════ -->
+<div id="welcome-screen" class="screen active">
+<div class="container welcome-hero">
+<div class="welcome-hero-content">
+  <div class="welcome-tag">SYSTEM READY // SY0-701 TRAINING MODULE</div>
+  <h1 class="welcome-title"><span class="glitch" data-text="SEC+">SEC+</span> <span class="accent">LAB</span></h1>
+  <p class="welcome-subtitle">
+    Full-length CompTIA Security+ exam simulator. <span class="hl">500+ questions</span> across all 5 domains, randomized per attempt. 
+    <span class="hl">Intelligent post-exam analysis</span> identifies weak topics, terminology gaps, and generates a personalized study plan. 
+    Built to mirror the real Pearson VUE experience.
+  </p>
+
+  <div class="stats-strip">
+    <div class="stat-box">
+      <div class="stat-label">Question Bank</div>
+      <div class="stat-value" id="stat-qbank">0<span class="stat-unit">Q</span></div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Exam Length</div>
+      <div class="stat-value">90<span class="stat-unit">Q</span></div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Time Limit</div>
+      <div class="stat-value">90<span class="stat-unit">min</span></div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Pass Threshold</div>
+      <div class="stat-value">750<span class="stat-unit">/900</span></div>
+    </div>
+  </div>
+
+  <div class="config-grid">
+    <div class="config-panel">
+      <div class="panel-title">// DOMAIN COVERAGE</div>
+      <h2 class="panel-h">SY0-701 Breakdown</h2>
+      <div class="domain-breakdown">
+        <div class="dom-row d1"><span class="dom-name">1.0 General Security Concepts</span><span class="dom-count" id="dc1">–</span><span class="dom-pct">12%</span></div>
+        <div class="dom-row d2"><span class="dom-name">2.0 Threats, Vulnerabilities & Mitigations</span><span class="dom-count" id="dc2">–</span><span class="dom-pct">22%</span></div>
+        <div class="dom-row d3"><span class="dom-name">3.0 Security Architecture</span><span class="dom-count" id="dc3">–</span><span class="dom-pct">18%</span></div>
+        <div class="dom-row d4"><span class="dom-name">4.0 Security Operations</span><span class="dom-count" id="dc4">–</span><span class="dom-pct">28%</span></div>
+        <div class="dom-row d5"><span class="dom-name">5.0 Security Program Management</span><span class="dom-count" id="dc5">–</span><span class="dom-pct">20%</span></div>
+      </div>
+    </div>
+    <div class="config-panel">
+      <div class="panel-title">// LAUNCH CONFIG</div>
+      <h2 class="panel-h">Select Mode</h2>
+      <div class="mode-selector">
+        <div class="mode-card selected" data-mode="full" onclick="selectMode('full')">
+          <div class="mode-label">RECOMMENDED</div>
+          <div class="mode-name">Full Exam · 90 Questions</div>
+          <div class="mode-desc">Complete simulation — 90 min timer, weighted by domain. Matches real exam.</div>
+        </div>
+        <div class="mode-card" data-mode="quick" onclick="selectMode('quick')">
+          <div class="mode-label">QUICK DRILL</div>
+          <div class="mode-name">Rapid · 30 Questions</div>
+          <div class="mode-desc">30 min timer. Fast focused practice for daily review.</div>
+        </div>
+        <div class="mode-card" data-mode="marathon" onclick="selectMode('marathon')">
+          <div class="mode-label">HARDCORE</div>
+          <div class="mode-name">Marathon · 150 Questions</div>
+          <div class="mode-desc">150 min timer. Deep coverage for exam-eve preparation.</div>
+        </div>
+      </div>
+      <button class="start-btn" onclick="startExam()">Initialize Exam</button>
+      <button class="start-btn start-btn-secondary" onclick="showTermIntro()">Run Diagnostic</button>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     EXAM SCREEN
+═══════════════════════════════════════════════ -->
+<div id="exam-screen" class="screen">
+<div class="container">
+  <div class="exam-top">
+    <div class="exam-id"><span class="pulse">●</span> SESSION #<span id="sess-id">XXXX</span></div>
+    <div class="timer-display" id="timer">⏱ 90:00</div>
+    <div class="progress-wrap">
+      <div class="progress-info">
+        <span id="prog-label">Q 1 / 90</span>
+        <span id="prog-pct">0 answered</span>
+      </div>
+      <div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div>
+    </div>
+    <div class="exam-actions">
+      <button class="exam-btn-mini danger" onclick="confirmAbort()">✕ Abort</button>
+    </div>
+  </div>
+
+  <div class="exam-layout">
+    <aside class="exam-sidebar">
+      <div class="sidebar-h">[ Navigation Map ]</div>
+      <div class="qgrid" id="q-grid"></div>
+      <div class="legend-box">
+        <div class="legend-i"><div class="legend-sq legend-current"></div>Current</div>
+        <div class="legend-i"><div class="legend-sq legend-answered"></div>Answered</div>
+        <div class="legend-i"><div class="legend-sq legend-flagged"></div>Flagged</div>
+        <div class="legend-i"><div class="legend-sq legend-empty"></div>Not answered</div>
+      </div>
+    </aside>
+    <main class="exam-main" id="exam-main"></main>
+  </div>
+</div>
+</div>
+
+<!-- RESULTS -->
+<div id="results-screen" class="screen"></div>
+
+<!-- Modals -->
+<div class="modal-bg" id="submit-modal">
+  <div class="modal-box">
+    <div class="modal-h">// FINAL SUBMISSION</div>
+    <div class="modal-title">Submit exam for grading?</div>
+    <div class="modal-desc">Once submitted, the exam cannot be resumed. Review any flagged or unanswered questions before finalizing.</div>
+    <div class="modal-stats" id="modal-stats"></div>
+    <div class="modal-actions">
+      <button class="m-cancel" onclick="closeModal('submit-modal')">Continue Review</button>
+      <button class="m-confirm" onclick="finalSubmit()">Submit & Grade</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="abort-modal">
+  <div class="modal-box">
+    <div class="modal-h">// ABORT SESSION</div>
+    <div class="modal-title">Abort current exam?</div>
+    <div class="modal-desc">All progress will be lost and no score will be recorded. You will return to the dashboard.</div>
+    <div class="modal-actions">
+      <button class="m-cancel" onclick="closeModal('abort-modal')">Keep Going</button>
+      <button class="m-confirm m-danger" onclick="abortExam()">Abort Now</button>
+    </div>
+  </div>
+</div>
+
+<!-- TERM OVERLAY -->
+<div class="term-overlay" id="term-overlay" onclick="closeTerm()">
+  <div class="term-box" onclick="event.stopPropagation()">
+    <div class="term-content" id="term-content"></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+
+// ═══════════════════════════════════════════════════════
+// QUESTION BANK — will be populated next
+// ═══════════════════════════════════════════════════════
+const BANK = [
+{d:1,t:['cia_triad','confidentiality'],q:`Which element of the CIA triad ensures that information is not disclosed to unauthorized individuals, entities, or processes?`,o:['Integrity','Availability','Confidentiality','Authenticity'],c:2,e:`Confidentiality ensures data is only accessible to authorized parties. Integrity ensures data is not altered; availability ensures data is accessible when needed; authenticity verifies identity.`},
+{d:1,t:['cia_triad','integrity'],q:`A security analyst discovers that a financial report has been altered by an unauthorized user. Which pillar of the CIA triad was violated?`,o:['Confidentiality','Integrity','Availability','Non-repudiation'],c:1,e:`Integrity ensures data remains accurate and unaltered by unauthorized parties. Hashing (SHA-256), digital signatures, and file integrity monitoring protect integrity.`},
+{d:1,t:['cia_triad','availability'],q:`A DDoS attack makes a company's e-commerce website unreachable to customers for 6 hours. Which CIA pillar has been compromised?`,o:['Confidentiality','Integrity','Availability','Accountability'],c:2,e:`Availability ensures that authorized users can access systems and data when needed. DDoS attacks specifically target availability. Mitigations include load balancers, CDNs, and DDoS protection services.`},
+{d:1,t:['non_repudiation','digital_signature'],q:`An email signed with a digital signature cannot be later denied by the sender as having been sent by them. This property is called:`,o:['Confidentiality','Authentication','Non-repudiation','Integrity'],c:2,e:`Non-repudiation prevents a party from denying having performed an action. Digital signatures provide non-repudiation by cryptographically binding the sender's identity to the message using their private key.`},
+{d:1,t:['aaa','authentication','authorization'],q:`In the AAA framework, which component tracks what a user does after they have been granted access?`,o:['Authentication','Authorization','Accounting','Attestation'],c:2,e:`AAA = Authentication (who you are), Authorization (what you can do), Accounting (what you did). Accounting records user activities for auditing and billing. RADIUS and TACACS+ are common AAA protocols.`},
+{d:1,t:['access_control','least_privilege'],q:`A developer is granted admin access to a production database for a task that requires only SELECT permission. This violates which principle?`,o:['Separation of duties','Least privilege','Defense in depth','Zero trust'],c:1,e:`The principle of least privilege states that users should only be granted the minimum permissions needed to perform their job. Granting admin for a task needing only read access violates this principle and increases insider threat and breach impact.`},
+{d:1,t:['access_control','separation_of_duties'],q:`A company requires that the person who approves purchase orders cannot be the same person who issues payments. This control is an example of:`,o:['Least privilege','Job rotation','Separation of duties','Mandatory vacation'],c:2,e:`Separation of duties (SoD) splits critical tasks among multiple people to prevent fraud and reduce error. Approval and payment being split is a classic SoD control in finance.`},
+{d:1,t:['access_control','job_rotation'],q:`A policy requires that employees rotate between different roles every 12 months. The PRIMARY security benefit of this policy is:`,o:['Reduce training costs','Detect fraud or errors that a single employee could hide','Improve employee morale','Meet regulatory requirements'],c:1,e:`Job rotation is an anti-fraud administrative control. When employees rotate, incoming staff can detect anomalies, fraud, or errors that the previous holder could have concealed. It also ensures redundancy of knowledge.`},
+{d:1,t:['defense_in_depth','layered_security'],q:`An organization deploys a perimeter firewall, host-based IDS, endpoint antivirus, application-layer WAF, and security awareness training. This architecture illustrates:`,o:['Zero trust','Single point of failure','Defense in depth','Compensating control'],c:2,e:`Defense in depth (layered security) uses multiple overlapping controls across technology, people, and processes so that if one layer fails, others continue to mitigate threats.`},
+{d:1,t:['zero_trust','never_trust'],q:`A network architect designs a network where no user or device is trusted by default, and every access request is authenticated, authorized, and encrypted. Which model is being implemented?`,o:['Castle-and-moat','Zero Trust','Perimeter defense','Open security'],c:1,e:`Zero Trust operates on "never trust, always verify" — no implicit trust based on network location. Every request is explicitly verified. Frameworks: NIST SP 800-207, Google BeyondCorp.`},
+{d:1,t:['zero_trust','microsegmentation'],q:`Which of the following is a key principle of Zero Trust Architecture?`,o:['Allow all internal traffic','Trust users inside the perimeter','Assume breach and verify explicitly','Use a single strong firewall'],c:2,e:`Zero Trust assumes a breach may have already occurred. Every access must be explicitly verified using identity, device posture, context, and continuous monitoring — regardless of network location.`},
+{d:1,t:['control_types','preventive'],q:`A firewall rule that blocks inbound traffic on port 445 to prevent SMB exploitation is an example of which control type?`,o:['Detective','Preventive','Corrective','Compensating'],c:1,e:`Preventive controls stop incidents from occurring. Firewalls, access controls, encryption, and training are preventive. Detective controls identify events after they happen; corrective controls fix issues; compensating provide alternative protection.`},
+{d:1,t:['control_types','detective'],q:`An IDS alerts the SOC about suspicious network traffic. What type of security control is an IDS?`,o:['Preventive','Detective','Deterrent','Corrective'],c:1,e:`Intrusion Detection Systems (IDS) detect and alert on security events but do not block them (unlike IPS). They are detective controls. Common examples: Snort, Suricata.`},
+{d:1,t:['control_types','corrective'],q:`After a malware infection, a sysadmin restores the affected system from a clean backup. This action represents which type of control?`,o:['Preventive','Detective','Corrective','Directive'],c:2,e:`Corrective controls remediate damage after a security incident. Examples: restoring from backup, patching vulnerabilities, updating firewall rules after an attack. They return systems to a known good state.`},
+{d:1,t:['control_types','deterrent'],q:`A "Warning: Unauthorized Access Prohibited" banner on a login page is an example of which control type?`,o:['Preventive','Detective','Deterrent','Technical'],c:2,e:`Deterrent controls discourage potential attackers. Warning banners, visible security cameras, and posted policies are deterrents. They do not actively prevent or detect but make attackers reconsider.`},
+{d:1,t:['control_types','compensating'],q:`A company cannot patch a legacy system that has a known vulnerability. They install an IPS rule to block the specific exploit pattern. The IPS rule is a:`,o:['Preventive control','Corrective control','Compensating control','Detective control'],c:2,e:`Compensating controls are alternative measures used when primary controls cannot be implemented. When a patch cannot be applied, IPS rules, network segmentation, or access restrictions can compensate.`},
+{d:1,t:['control_categories','technical'],q:`Which of the following is a technical (logical) control?`,o:['Security guard','Security awareness training','Access control list (ACL)','Fence around data center'],c:2,e:`Technical controls are implemented via technology. ACLs, firewalls, encryption, and antivirus are technical. Security guards and fences are physical; training is administrative/managerial.`},
+{d:1,t:['control_categories','administrative'],q:`Security policies, procedures, background checks, and awareness training belong to which control category?`,o:['Technical','Administrative (managerial)','Physical','Operational'],c:1,e:`Administrative (managerial) controls are policies, procedures, standards, and guidelines enforced by people. They govern behavior and decision-making rather than technology.`},
+{d:1,t:['control_categories','physical'],q:`Mantraps, biometric door locks, and security cameras are examples of which control category?`,o:['Technical','Physical','Administrative','Directive'],c:1,e:`Physical controls protect physical assets: locks, cameras, fences, mantraps, bollards, HVAC, fire suppression. They prevent physical access or damage.`},
+{d:1,t:['authentication_factors','something_you_know'],q:`Which of the following is an example of "something you know" authentication factor?`,o:['Smart card','Fingerprint','Password','Hardware token'],c:2,e:`"Something you know" includes passwords, PINs, passphrases, and security question answers. "Something you have" = tokens, smart cards, phones. "Something you are" = biometrics.`},
+{d:1,t:['authentication_factors','something_you_have'],q:`A hardware OTP token carried by a user represents which authentication factor?`,o:['Something you know','Something you have','Something you are','Somewhere you are'],c:1,e:`Hardware tokens (YubiKey, RSA SecurID), smart cards, and mobile devices running authenticator apps represent "something you have" — the possession factor.`},
+{d:1,t:['authentication_factors','biometrics'],q:`Retinal scans, fingerprints, and voice recognition are examples of which authentication factor?`,o:['Something you know','Something you have','Something you are','Something you do'],c:2,e:`Biometric factors represent "something you are" — inherent physical characteristics. These are harder to steal but can be spoofed and cannot be easily changed if compromised.`},
+{d:1,t:['mfa','two_factor'],q:`A user logs in with a password and then receives a one-time code by SMS. What type of authentication is this?`,o:['Single-factor authentication','Two-factor authentication (2FA)','Single sign-on (SSO)','Federated authentication'],c:1,e:`2FA combines two different authentication factors: password (something you know) + SMS code (something you have). Note: SMS-based MFA is considered weak due to SIM swapping attacks — TOTP apps or hardware tokens are stronger.`},
+{d:1,t:['mfa','best_practice'],q:`Which MFA combination is considered the STRONGEST?`,o:['Password + SMS OTP','Password + Security question','Password + Hardware security key (FIDO2)','Username + Password'],c:2,e:`FIDO2/WebAuthn hardware keys (YubiKey) provide phishing-resistant authentication with cryptographic proof. Unlike SMS (vulnerable to SIM swap) and security questions (social engineering), hardware keys cannot be phished or intercepted.`},
+{d:1,t:['sso','federation'],q:`A user logs into their corporate portal once and can then access multiple cloud applications (Salesforce, Workday, Slack) without re-entering credentials. This is:`,o:['MFA','SSO (Single Sign-On)','RBAC','PKI'],c:1,e:`Single Sign-On (SSO) allows users to authenticate once and access multiple applications. Common SSO protocols: SAML 2.0, OpenID Connect (OIDC), OAuth 2.0.`},
+{d:1,t:['saml','federation'],q:`Which protocol uses XML-based assertions to exchange authentication and authorization data between an identity provider (IdP) and service provider (SP)?`,o:['OAuth 2.0','SAML 2.0','RADIUS','Kerberos'],c:1,e:`SAML (Security Assertion Markup Language) uses XML for SSO between IdP and SP. OAuth/OIDC use JSON tokens (JWT). RADIUS is for network authentication. Kerberos is a ticket-based AD protocol.`},
+{d:1,t:['oauth','authorization'],q:`A mobile app allows users to log in using their Google account. The app receives an access token to access specific Google APIs on the user's behalf. This is an example of:`,o:['SAML authentication','OAuth 2.0 authorization','Kerberos delegation','LDAP bind'],c:1,e:`OAuth 2.0 is a delegation protocol for authorization — it grants apps limited access to user resources without sharing credentials. OpenID Connect (OIDC) sits on top of OAuth and adds authentication.`},
+{d:1,t:['kerberos','tickets'],q:`In a Windows Active Directory environment, which protocol issues time-limited tickets (TGT, service tickets) for authenticating users to network services?`,o:['LDAP','NTLM','Kerberos','RADIUS'],c:2,e:`Kerberos is the default authentication protocol in AD. The Key Distribution Center (KDC) issues a Ticket Granting Ticket (TGT), then service tickets for specific resources. All tickets are time-limited (default 10 hours).`},
+{d:1,t:['radius','tacacs'],q:`Which AAA protocol separates authentication, authorization, and accounting into distinct processes and encrypts the entire payload, making it preferred for device administration?`,o:['RADIUS','TACACS+','LDAP','Kerberos'],c:1,e:`TACACS+ (Cisco proprietary) separates AAA functions and encrypts the full packet. RADIUS combines authentication/authorization, encrypts only passwords, and is preferred for network access. Both run on different ports.`},
+{d:1,t:['ldap','directory'],q:`Which protocol is used to query and modify directory services such as Microsoft Active Directory, typically running on port 389 (or 636 for LDAPS)?`,o:['SMB','LDAP','DNS','RADIUS'],c:1,e:`LDAP (Lightweight Directory Access Protocol) queries X.500-like directory services. Port 389 is plaintext; 636 is LDAPS (LDAP over SSL/TLS). Active Directory exposes LDAP for queries.`},
+{d:1,t:['rbac','access_control'],q:`A system administrator creates "Accountant" and "HR Manager" roles, each with specific permissions, and assigns users to these roles rather than assigning permissions directly. This is:`,o:['DAC (Discretionary Access Control)','MAC (Mandatory Access Control)','RBAC (Role-Based Access Control)','ABAC (Attribute-Based Access Control)'],c:2,e:`RBAC assigns permissions to roles, then users to roles. This simplifies management. DAC: owner decides access. MAC: system enforces based on classification. ABAC: decisions based on attributes (user, resource, environment).`},
+{d:1,t:['mac','classification'],q:`A government agency uses a system where access decisions are enforced by the OS based on security labels (Unclassified, Confidential, Secret, Top Secret). A user with Secret clearance cannot read Top Secret data. This model is:`,o:['DAC','MAC','RBAC','ABAC'],c:1,e:`Mandatory Access Control (MAC) enforces access based on classification labels and clearance levels. The system (not users) enforces rules. Used in military/government. SELinux is a MAC implementation.`},
+{d:1,t:['dac','ownership'],q:`In a Windows file system, the owner of a file can grant other users read or write permissions. This access control model is:`,o:['MAC','DAC','RBAC','ABAC'],c:1,e:`Discretionary Access Control (DAC) allows resource owners to grant access at their discretion. Standard file systems (NTFS, POSIX) use DAC. More flexible than MAC but easier to misconfigure.`},
+{d:1,t:['abac','attributes'],q:`A system grants access based on evaluating: user's department = "Engineering", time = "business hours", device = "managed", location = "corporate network". This is:`,o:['RBAC','MAC','DAC','ABAC'],c:3,e:`Attribute-Based Access Control (ABAC) uses policies that evaluate attributes of user, resource, action, and environment. More granular than RBAC. XACML is a standard ABAC policy language.`},
+{d:1,t:['principle_of_least_privilege','need_to_know'],q:`The principle that users should only have access to information strictly required for their job duties is called:`,o:['Least privilege','Need to know','Separation of duties','Defense in depth'],c:1,e:`Need to know restricts access based on operational necessity even if a user has appropriate clearance. Least privilege concerns the minimum permissions needed. These principles often work together.`},
+{d:1,t:['risk','threat_vulnerability'],q:`What is the formula commonly used to define risk in cybersecurity?`,o:['Risk = Threat + Vulnerability','Risk = Threat × Vulnerability × Impact','Risk = Asset + Threat','Risk = Impact ÷ Likelihood'],c:1,e:`Risk = Threat × Vulnerability × Impact (or Likelihood × Impact in simpler terms). A threat without a matching vulnerability poses little risk. High-impact vulnerabilities with active threats = critical risk.`},
+{d:1,t:['gap_analysis','baseline'],q:`A CISO compares the organization's current security posture against the NIST Cybersecurity Framework to identify where controls are missing. This process is called:`,o:['Risk assessment','Gap analysis','Penetration test','Threat modeling'],c:1,e:`Gap analysis compares current state against a target state (framework, standard, best practice) to identify missing controls and remediation priorities. Common frameworks: NIST CSF, ISO 27001, CIS Controls.`},
+{d:1,t:['change_management','cab'],q:`An organization requires that all changes to production systems be reviewed by a Change Advisory Board (CAB) before implementation. What is the PRIMARY benefit?`,o:['Reduces IT costs','Ensures changes are tested, authorized, and documented to minimize risk','Increases compliance audit findings','Slows down operations'],c:1,e:`Change management (ITIL) ensures changes are properly assessed, tested, approved, and documented. The CAB reviews change requests (CRs) for risk, impact, and rollback plans. This reduces outages and security incidents from unauthorized or poorly planned changes.`},
+{d:1,t:['change_management','rollback'],q:`Every change request in an organization must include a documented procedure for reverting the change if it causes issues. This document is called a:`,o:['Runbook','Rollback plan (back-out plan)','Incident response plan','Risk register'],c:1,e:`A rollback plan (or back-out plan) documents steps to revert a change. It is a standard part of change management to ensure recovery from failed changes without extended downtime.`},
+{d:1,t:['pki','public_key'],q:`In Public Key Infrastructure (PKI), what is the primary function of a Certificate Authority (CA)?`,o:['Encrypt data in transit','Issue, verify, and revoke digital certificates','Manage network access','Perform penetration tests'],c:1,e:`A CA issues digital certificates that bind public keys to identities. It verifies the identity of the applicant, signs the certificate with its own private key, and manages revocation via CRL or OCSP.`},
+{d:1,t:['pki','crl_ocsp'],q:`Which of the following is a real-time mechanism to check whether a digital certificate has been revoked?`,o:['Certificate Revocation List (CRL)','Online Certificate Status Protocol (OCSP)','Digital Signature Algorithm (DSA)','Certificate Signing Request (CSR)'],c:1,e:`OCSP provides real-time revocation status via HTTP query to an OCSP responder. CRL is a periodically downloaded list — slower and larger. OCSP stapling combines benefits by having the server include a signed OCSP response.`},
+{d:1,t:['digital_certificate','x509'],q:`Which file contains a server's public key, identity, and CA signature and is exchanged during a TLS handshake?`,o:['Private key file','X.509 digital certificate','CRL file','CSR file'],c:1,e:`An X.509 certificate contains the public key, subject identity, issuer info, validity period, and CA's digital signature. Clients verify the CA signature using the CA's public key (from trust store). Formats: PEM, DER, PFX.`},
+{d:1,t:['hashing','md5_sha'],q:`Which of the following is a CURRENTLY RECOMMENDED cryptographic hash function?`,o:['MD5','SHA-1','SHA-256','DES'],c:2,e:`SHA-256 (part of SHA-2 family) is currently secure. MD5 and SHA-1 are deprecated due to collision vulnerabilities. DES is encryption, not hashing. SHA-3 is also recommended for future-proofing.`},
+{d:1,t:['hashing','collision'],q:`A cryptographic hash is considered broken when an attacker can:`,o:['Reverse the hash back to the original input','Find two inputs that produce the same hash (collision)','Guess the hash size','Convert the hash to plaintext'],c:1,e:`Hash functions must be collision-resistant: finding two inputs that produce the same output should be computationally infeasible. MD5 (2004) and SHA-1 (2017) have documented practical collisions.`},
+{d:1,t:['symmetric_vs_asymmetric','aes'],q:`Which encryption algorithm uses the SAME key for both encryption and decryption?`,o:['RSA','ECC','AES','Diffie-Hellman'],c:2,e:`Symmetric encryption (AES, 3DES, ChaCha20, Blowfish) uses one shared key. Fast, used for bulk data. Asymmetric (RSA, ECC, DH) uses public/private key pairs — slower, used for key exchange and signatures.`},
+{d:1,t:['asymmetric','rsa_ecc'],q:`Which of the following is an asymmetric encryption algorithm that is preferred for use on mobile/IoT devices due to smaller key sizes with equivalent security?`,o:['AES','RSA','ECC (Elliptic Curve Cryptography)','3DES'],c:2,e:`ECC provides equivalent security to RSA with much smaller key sizes (256-bit ECC ≈ 3072-bit RSA). This makes ECC ideal for mobile, IoT, and performance-sensitive applications. Used in TLS, Bitcoin, SSH.`},
+{d:1,t:['key_exchange','diffie_hellman'],q:`Which protocol allows two parties to securely establish a shared secret key over an insecure channel without ever transmitting the key itself?`,o:['AES','RSA','Diffie-Hellman','SHA-256'],c:2,e:`Diffie-Hellman (DH) key exchange allows two parties to derive a shared secret using public values exchanged over an untrusted channel. ECDHE is the elliptic-curve ephemeral variant used in modern TLS. DH doesn't authenticate — combined with certificates in TLS.`},
+{d:1,t:['digital_signature','signing'],q:`To create a digital signature, a user signs a document using:`,o:['Their public key','Their private key','The recipient\'s public key','A shared secret'],c:1,e:`Signing uses the sender's PRIVATE key. Verification uses the senders PUBLIC key. This provides authentication and non-repudiation. The signature is typically over a hash of the document, not the full document.`},
+{d:1,t:['encryption_modes','ecb_cbc_gcm'],q:`Which block cipher mode of operation provides both confidentiality AND authenticated integrity in a single operation?`,o:['ECB','CBC','CTR','GCM (Galois/Counter Mode)'],c:3,e:`GCM is an AEAD (Authenticated Encryption with Associated Data) mode providing both encryption and integrity authentication. ECB is insecure (patterns visible). CBC and CTR provide only encryption; require separate MAC for integrity. AES-GCM is standard in TLS 1.3.`},
+{d:1,t:['salting','password_storage'],q:`A security best practice for storing passwords is to hash them AND add a unique random value before hashing. This value is called a:`,o:['Pepper','Salt','Nonce','Key'],c:1,e:`Salt is unique random data added to each password before hashing to prevent rainbow table attacks and ensure identical passwords have different hashes. Pepper is a secret value added to all passwords (kept separate from DB). Use bcrypt/Argon2/scrypt — not plain SHA-256.`},
+{d:1,t:['key_stretching','bcrypt'],q:`Which of the following algorithms is specifically designed for password hashing with configurable computational cost (work factor)?`,o:['SHA-256','bcrypt','AES','RSA'],c:1,e:`bcrypt, Argon2, scrypt, and PBKDF2 are key derivation functions (KDFs) designed for password hashing. They are intentionally slow with tunable work factors to resist brute-force. Argon2 is the current recommendation (winner of Password Hashing Competition 2015).`},
+{d:1,t:['tls','ssl'],q:`Which version of TLS is currently considered the MOST secure and includes features like zero-RTT handshake and forward secrecy by default?`,o:['SSL 3.0','TLS 1.0','TLS 1.2','TLS 1.3'],c:3,e:`TLS 1.3 (RFC 8446, 2018) removes insecure algorithms, requires forward secrecy, simplifies the handshake (1-RTT, 0-RTT resumption), and encrypts more of the handshake. TLS 1.0/1.1 are deprecated; SSL 3.0 vulnerable to POODLE.`},
+{d:1,t:['ipsec','vpn'],q:`Which protocol suite operates at the network layer (Layer 3) to provide authentication and encryption for IP packets, commonly used in site-to-site VPNs?`,o:['SSL/TLS','IPsec','SSH','WireGuard'],c:1,e:`IPsec operates at Layer 3 and has two main protocols: AH (Authentication Header) for integrity/auth and ESP (Encapsulating Security Payload) for confidentiality. Used in site-to-site VPNs and L2TP/IPsec for remote access. IKE handles key exchange.`},
+{d:1,t:['ssh','secure_shell'],q:`Which of the following is the SECURE replacement for Telnet for remote command-line administration?`,o:['FTP','SSH','HTTP','SNMP v1'],c:1,e:`SSH (Secure Shell, port 22) encrypts all communications and supports public-key authentication, replacing the insecure plaintext Telnet (port 23), rlogin, and rsh. Also used for SFTP and port forwarding.`},
+{d:1,t:['vulnerability_scan','pen_test'],q:`Which of the following BEST describes the difference between a vulnerability scan and a penetration test?`,o:['They are the same thing with different names','Vulnerability scans identify weaknesses; pen tests exploit them to demonstrate impact','Vulnerability scans are manual; pen tests are automated','Pen tests are less thorough than vulnerability scans'],c:1,e:`Vulnerability scans (Nessus, Qualys) identify known vulnerabilities automatically. Penetration tests actively exploit weaknesses to demonstrate real-world impact and chain multiple vulns together. Pen tests require manual skill and formal authorization.`},
+{d:1,t:['pentest','methodology'],q:`Which phase of a penetration test involves gathering publicly available information about the target without interacting with it?`,o:['Scanning','Passive reconnaissance','Exploitation','Post-exploitation'],c:1,e:`Passive reconnaissance uses OSINT (Open Source Intelligence) to gather info without touching the target: WHOIS, DNS records, LinkedIn, shodan.io, search engines. Active recon involves direct interaction (port scans, banner grabbing).`},
+{d:1,t:['pentest','boxes'],q:`A penetration tester is given full knowledge of the target (network diagrams, source code, credentials). This engagement type is:`,o:['Black-box','Gray-box','White-box','Red team'],c:2,e:`White-box (crystal box) testing provides full knowledge — efficient for thorough testing. Black-box = no knowledge (simulates external attacker). Gray-box = partial knowledge (simulates insider or compromised user).`},
+{d:1,t:['red_blue_team','purple_team'],q:`A team that simulates real-world attackers using known threat actor TTPs to test the organization's detection and response capabilities is the:`,o:['Blue team','Red team','White team','Green team'],c:1,e:`Red team performs adversary emulation based on threat intel (e.g., MITRE ATT&CK). Blue team defends. White team oversees rules/scope. Purple team facilitates collaboration between red and blue to improve defenses.`},
+{d:1,t:['bug_bounty','responsible_disclosure'],q:`A company publishes a program that rewards external security researchers who responsibly report vulnerabilities. This is called a:`,o:['Penetration test','Red team exercise','Bug bounty program','Vulnerability assessment'],c:2,e:`Bug bounty programs (HackerOne, Bugcrowd) incentivize ethical disclosure. Researchers find and report vulnerabilities in exchange for recognition or monetary rewards. Scope and rules of engagement must be clearly defined.`},
+{d:1,t:['honeypot','deception'],q:`A decoy system designed to attract attackers and study their techniques is called a:`,o:['Firewall','Sandbox','Honeypot','Bastion host'],c:2,e:`Honeypots are intentionally vulnerable systems with no legitimate use — any interaction is malicious. They gather threat intel and detect lateral movement. A honeynet is a network of honeypots. Honeytokens are fake credentials/data.`},
+{d:1,t:['ids_ips','signature'],q:`An IDS/IPS uses a database of known attack patterns to detect threats. This detection method is called:`,o:['Anomaly-based','Signature-based','Heuristic-based','Behavioral-based'],c:1,e:`Signature-based detection matches traffic against known attack patterns (like antivirus). Fast but blind to zero-days. Anomaly-based (behavioral) establishes baselines and alerts on deviations — catches novel attacks but more false positives.`},
+
+// ─────────────────────────────────────────────
+// DOMAIN 2 — THREATS, VULNERABILITIES & MITIGATIONS (110 Q)
+// ─────────────────────────────────────────────
+
+{d:2,t:['malware','virus'],q:`Which type of malware attaches itself to legitimate executable files and requires user action (running the host program) to execute and spread?`,o:['Worm','Virus','Trojan','Rootkit'],c:1,e:`A virus infects legitimate files and executes when the host program is run. Requires user action to spread. Worms self-propagate without user action; Trojans masquerade as legitimate software; rootkits hide deep in the OS.`},
+{d:2,t:['malware','worm'],q:`The WannaCry malware spread by exploiting the SMB EternalBlue vulnerability without requiring any user interaction. This type of self-propagating malware is a:`,o:['Virus','Worm','Trojan','Logic bomb'],c:1,e:`Worms self-propagate across networks by exploiting vulnerabilities — no user action needed. WannaCry (2017), Conficker, and Stuxnet are famous worms. Patching and network segmentation are key defenses.`},
+{d:2,t:['malware','trojan'],q:`A user downloads what appears to be a free game, but it secretly installs a backdoor giving an attacker remote access. This malware is a:`,o:['Worm','Virus','Trojan horse','Rootkit'],c:2,e:`Trojans disguise themselves as legitimate software to trick users into installation. Unlike viruses/worms, they don't self-replicate. Common delivery: pirated software, fake updates, phishing attachments.`},
+{d:2,t:['malware','rootkit'],q:`A type of malware that operates at the kernel level or firmware, hiding its presence from the operating system and standard security tools, is called a:`,o:['Worm','Adware','Rootkit','Spyware'],c:2,e:`Rootkits embed in the OS kernel, bootloader, or firmware (UEFI rootkits). They hide processes, files, and network connections from detection. Removal often requires offline analysis or reimaging. Tools: GMER, rkhunter, chkrootkit.`},
+{d:2,t:['malware','ransomware'],q:`A company's file servers are encrypted, and a note demands $500,000 in Bitcoin for the decryption key. What type of attack is this?`,o:['DDoS','Ransomware','Spyware','Keylogger'],c:1,e:`Ransomware encrypts victim data and demands payment. Variants: crypto-ransomware (encrypts files), locker ransomware (locks screen), doxware/leakware (threatens to leak data). Examples: WannaCry, Ryuk, LockBit, Conti.`},
+{d:2,t:['malware','ransomware_defense'],q:`Which of the following is the MOST effective defense against ransomware data loss?`,o:['Antivirus signatures','Air-gapped immutable backups following 3-2-1 rule','Firewall rules','Disk encryption'],c:1,e:`3-2-1 backup rule: 3 copies, 2 media types, 1 offsite/offline. Immutable/air-gapped backups can't be encrypted by ransomware even if it has network access. Disk encryption doesn't help against ransomware (the OS has the key).`},
+{d:2,t:['malware','keylogger'],q:`A malicious program records every keystroke a user types and sends the data to an attacker. This is a:`,o:['Logic bomb','Keylogger','Rootkit','Worm'],c:1,e:`Keyloggers capture keystrokes to steal credentials, credit cards, and sensitive data. They can be software-based (malware) or hardware-based (USB interceptors between keyboard and PC).`},
+{d:2,t:['malware','logic_bomb'],q:`A disgruntled employee plants code in a company's payroll system that will delete all records if their account is ever disabled. This is an example of:`,o:['Backdoor','Logic bomb','Trojan','Worm'],c:1,e:`Logic bombs execute malicious code when specific conditions are met (date, event, account status). They are often insider threats and are difficult to detect before triggering. Code reviews and separation of duties help prevent them.`},
+{d:2,t:['malware','backdoor'],q:`An attacker compromises a server and installs a program that allows them to bypass normal authentication in the future. This is a:`,o:['Logic bomb','Backdoor','Keylogger','Adware'],c:1,e:`Backdoors provide covert remote access bypassing normal authentication. They maintain persistence after initial compromise. Can be installed via malware, RATs, or even legitimate-but-hidden accounts/credentials.`},
+{d:2,t:['malware','spyware_adware'],q:`Software that tracks a user's browsing habits to serve targeted advertisements, often bundled with free software, is called:`,o:['Keylogger','Adware','Ransomware','Rootkit'],c:1,e:`Adware displays ads and tracks usage. Often comes bundled with free software ("PUPs" — Potentially Unwanted Programs). Less destructive than other malware but invades privacy and slows systems.`},
+{d:2,t:['malware','botnet_rat'],q:`An attacker infects thousands of home computers with malware that allows central control. The combined infected machines can be commanded to launch DDoS attacks. This network is called a:`,o:['Botnet','VPN','Honeynet','Sandbox'],c:0,e:`A botnet is a network of compromised computers ("bots" or "zombies") controlled by an attacker via a C2 (command-and-control) server. Used for DDoS, spam, credential stuffing, crypto mining. Famous: Mirai, Emotet, TrickBot.`},
+{d:2,t:['malware','fileless'],q:`An attacker uses legitimate PowerShell to download and execute malicious code directly in memory, never writing to disk. This evasion technique is called:`,o:['Packed malware','Polymorphic malware','Fileless malware / Living-off-the-Land','Metamorphic malware'],c:2,e:`Fileless malware (LotL — Living off the Land) uses legitimate OS tools (PowerShell, WMI, mshta, certutil) to execute in memory without writing files. Evades signature-based AV. EDR with behavioral analysis is the main defense.`},
+{d:2,t:['phishing','general'],q:`A user receives an email appearing to be from "IT Support" asking them to click a link and verify their credentials. The link leads to a fake login page. This is:`,o:['Phishing','Pharming','Vishing','Tailgating'],c:0,e:`Phishing uses deceptive emails to trick users into revealing credentials, clicking malicious links, or opening malicious attachments. Indicators: urgency, generic greetings, suspicious URLs, typos, unexpected attachments.`},
+{d:2,t:['phishing','spear_phishing'],q:`A targeted phishing attack directed at a specific individual in an organization, using personalized information to appear legitimate, is called:`,o:['Phishing','Spear phishing','Whaling','Pharming'],c:1,e:`Spear phishing is personalized — attackers research targets (LinkedIn, breaches) to craft convincing messages. Much higher success rate than mass phishing. Whaling is spear phishing of high-value executives.`},
+{d:2,t:['phishing','whaling'],q:`An attacker targets the CEO of a company with a carefully crafted email impersonating the CFO and requesting an urgent wire transfer. This is:`,o:['Phishing','Smishing','Whaling','Spoofing'],c:2,e:`Whaling targets "big fish" — executives, C-suite. BEC (Business Email Compromise) scams often use whaling. Tactics: urgency, authority, confidentiality, wire transfer requests. Average BEC loss exceeds $100K per incident (FBI IC3).`},
+{d:2,t:['phishing','vishing'],q:`A user receives a phone call from someone claiming to be Microsoft Tech Support, asking for remote access to "fix" their computer. This is:`,o:['Phishing','Vishing','Smishing','Spoofing'],c:1,e:`Vishing (voice phishing) uses phone calls. Common scams: tech support, IRS, bank fraud, "grandparent scam". Defenses: never share credentials over phone, verify by calling back via official number.`},
+{d:2,t:['phishing','smishing'],q:`A user receives an SMS claiming their package is being held and asking them to click a link to resolve the issue. This is an example of:`,o:['Phishing','Vishing','Smishing','Pharming'],c:2,e:`Smishing = SMS + phishing. Uses text messages with malicious links. Common themes: delivery notices, bank alerts, COVID-related, prize notifications. Effective because SMS feels more personal/urgent than email.`},
+{d:2,t:['phishing','pharming'],q:`An attacker poisons a DNS server to redirect all users visiting "bank.com" to a fraudulent look-alike site. This attack is:`,o:['Phishing','Pharming','Typosquatting','Spoofing'],c:1,e:`Pharming redirects users from legitimate sites to malicious ones via DNS poisoning or compromised hosts files. Unlike phishing, users don't need to click anything. DNSSEC helps prevent DNS poisoning.`},
+{d:2,t:['social_engineering','pretexting'],q:`An attacker calls a help desk employee, impersonating the CFO and using invented urgency ("I'm in a meeting overseas") to pressure them into resetting a password. The fabricated scenario is called:`,o:['Tailgating','Pretexting','Shoulder surfing','Dumpster diving'],c:1,e:`Pretexting uses a fabricated scenario (pretext) to manipulate victims. Attackers research targets and construct believable stories. The "story" builds trust and creates urgency that bypasses normal verification procedures.`},
+{d:2,t:['social_engineering','tailgating'],q:`An unauthorized person follows an employee through a secure door by pretending to be carrying boxes and asking the employee to hold the door. This is:`,o:['Shoulder surfing','Tailgating','Dumpster diving','Impersonation'],c:1,e:`Tailgating (piggybacking) is physical social engineering where an attacker follows an authorized person through an access-controlled entry. Mitigations: mantraps, security awareness, "one badge, one person" policies.`},
+{d:2,t:['social_engineering','shoulder_surfing'],q:`An attacker stands behind a user in a coffee shop and watches them enter their banking password on a laptop screen. This technique is called:`,o:['Tailgating','Shoulder surfing','Dumpster diving','Pretexting'],c:1,e:`Shoulder surfing is direct visual observation of someone entering credentials or viewing sensitive data. Defenses: privacy screens, positional awareness, MFA (so observed passwords alone aren't enough).`},
+{d:2,t:['social_engineering','dumpster_diving'],q:`An attacker recovers sensitive documents from a company's trash to gather intelligence for a future attack. This technique is called:`,o:['Dumpster diving','Pretexting','Shoulder surfing','Tailgating'],c:0,e:`Dumpster diving recovers discarded documents, drives, or devices. Companies should shred sensitive documents, sanitize drives (DBAN, crypto-erase), and have clear data destruction policies.`},
+{d:2,t:['social_engineering','baiting'],q:`An attacker leaves USB drives labeled "Payroll Q4" in a company parking lot, hoping employees will plug them in. This is a form of:`,o:['Pretexting','Baiting','Quid pro quo','Tailgating'],c:1,e:`Baiting exploits curiosity or greed by leaving tempting items (USB drives, free gifts). Plugged-in drives may contain malware or HID (keyboard) payloads (Rubber Ducky). Disable USB autorun and train users.`},
+{d:2,t:['social_engineering','quid_pro_quo'],q:`An attacker poses as IT support, cold-calling employees offering "free software upgrades" in exchange for their login credentials. This is:`,o:['Pretexting','Quid pro quo','Baiting','Whaling'],c:1,e:`Quid pro quo ("something for something") offers a benefit in exchange for information or action. Common scams: fake tech support offering help in exchange for remote access.`},
+{d:2,t:['social_engineering','impersonation'],q:`An attacker enters a company wearing a utility worker uniform and claims to be there to fix the HVAC system. This is an example of:`,o:['Tailgating','Impersonation','Baiting','Pretexting'],c:1,e:`Impersonation involves pretending to be someone with legitimate access (IT, utility worker, auditor). Combined with pretexting creates strong social engineering. Physical security should verify identity and visitor logs.`},
+{d:2,t:['attack_type','ddos'],q:`A botnet floods a web server with millions of HTTP requests from thousands of different IPs, making the site unreachable for legitimate users. This attack is:`,o:['DoS','DDoS','Smurf attack','Phishing'],c:1,e:`DDoS (Distributed Denial of Service) uses many compromised systems to amplify attack volume. Types: volumetric (bandwidth), protocol (SYN flood), application-layer (HTTP flood). Mitigations: CDN, rate limiting, DDoS protection services (Cloudflare, AWS Shield).`},
+{d:2,t:['attack_type','syn_flood'],q:`An attacker sends thousands of TCP SYN packets to a server, never completing the three-way handshake, exhausting the server's connection table. This is a:`,o:['Smurf attack','SYN flood','DNS amplification','Teardrop attack'],c:1,e:`SYN flood exploits TCP's three-way handshake. Server allocates resources for half-open connections. Mitigations: SYN cookies, connection rate limiting, increased backlog queue.`},
+{d:2,t:['attack_type','amplification'],q:`An attacker sends small DNS queries with the victim's spoofed IP to open DNS resolvers. The large responses overwhelm the victim. This technique is:`,o:['DNS amplification / reflection','SQL injection','ARP poisoning','Phishing'],c:0,e:`Amplification attacks use protocols with large response/request ratios (DNS, NTP, Memcached) and IP spoofing to reflect amplified traffic at victims. Mitigations: disable open resolvers, BCP 38 (ingress filtering to prevent IP spoofing).`},
+{d:2,t:['attack_type','smurf'],q:`An attacker sends ICMP echo requests to a broadcast address with the victim's spoofed IP as source. All hosts reply to the victim, overwhelming it. This is a:`,o:['Smurf attack','SYN flood','Teardrop','Fraggle'],c:0,e:`Smurf attacks were common in the 1990s — exploit ICMP broadcast amplification. Modern routers disable directed broadcasts (RFC 2644) preventing this. Fraggle is the UDP variant.`},
+{d:2,t:['attack_type','mitm'],q:`An attacker positions themselves between a user and a website, intercepting and modifying traffic. CompTIA now calls this attack:`,o:['Replay attack','On-path attack','Session fixation','Side-channel attack'],c:1,e:`CompTIA renamed MitM (Man-in-the-Middle) to "on-path attack" in SY0-701. Attacker intercepts/alters communications. Mitigations: TLS, certificate pinning, HSTS, mutual authentication. ARP poisoning enables on-path on LANs.`},
+{d:2,t:['attack_type','arp_poisoning'],q:`On a local network, an attacker sends forged ARP replies to associate their MAC address with the gateway's IP, redirecting traffic through their machine. This is:`,o:['DNS poisoning','ARP poisoning','IP spoofing','VLAN hopping'],c:1,e:`ARP spoofing/poisoning exploits the stateless ARP protocol — any device can claim any IP. Enables on-path attacks on LANs. Mitigations: Dynamic ARP Inspection (DAI), static ARP entries, 802.1X, encrypted protocols.`},
+{d:2,t:['attack_type','dns_poisoning'],q:`An attacker injects false DNS records into a resolver's cache, causing users to be redirected to malicious sites. This attack is:`,o:['ARP poisoning','DNS cache poisoning','URL redirection','Typosquatting'],c:1,e:`DNS cache poisoning corrupts resolver caches with false records. Kaminsky attack (2008) highlighted weaknesses. DNSSEC mitigates by cryptographically signing DNS records so resolvers can verify authenticity.`},
+{d:2,t:['attack_type','replay'],q:`An attacker captures a valid login authentication packet and later resends it to gain unauthorized access. This is a:`,o:['Spoofing attack','Replay attack','Birthday attack','Brute force'],c:1,e:`Replay attacks retransmit captured valid data. Mitigations: timestamps, nonces (numbers used once), session IDs, challenge-response, sequence numbers. Kerberos uses timestamps; TLS uses random nonces.`},
+{d:2,t:['attack_type','session_hijacking'],q:`An attacker steals a user's authentication cookie and uses it to access their account without knowing the password. This is:`,o:['Brute force','Session hijacking','Spoofing','Pass-the-hash'],c:1,e:`Session hijacking steals session tokens/cookies via XSS, network sniffing, or session fixation. Mitigations: Secure+HttpOnly cookies, short expiration, TLS everywhere, SameSite cookies, token rotation on auth state change.`},
+{d:2,t:['attack_type','pass_the_hash'],q:`An attacker obtains NTLM password hashes from memory and uses them to authenticate to other Windows systems without cracking the hash. This is:`,o:['Rainbow table','Pass-the-hash','Dictionary attack','Kerberoasting'],c:1,e:`Pass-the-Hash (PtH) reuses NTLM hashes directly — no need to crack them. Mimikatz is the classic tool. Mitigations: disable NTLM where possible, use Kerberos, Credential Guard, LAPS, limit admin logons.`},
+{d:2,t:['attack_type','kerberoasting'],q:`An attacker requests Kerberos service tickets for accounts with SPNs and attempts to crack them offline to recover service account passwords. This is:`,o:['Pass-the-hash','Kerberoasting','Golden ticket','DCSync'],c:1,e:`Kerberoasting: any authenticated user can request TGS tickets for any SPN. Tickets are encrypted with the service account's password hash — crackable offline. Mitigations: strong service account passwords (25+ char), gMSAs (group managed service accounts), AES-only.`},
+{d:2,t:['attack_type','brute_force'],q:`An attacker systematically tries every possible combination of characters to guess a password. This is a:`,o:['Dictionary attack','Brute force attack','Rainbow table attack','Password spraying'],c:1,e:`Brute force tries all possible combinations — time-consuming but guaranteed eventually. Online brute force is slow (rate limits, lockouts); offline (from stolen hash) can try billions per second on GPUs.`},
+{d:2,t:['attack_type','dictionary'],q:`An attacker uses a list of common passwords ("Password123!", "Welcome1", etc.) to try against user accounts. This is a:`,o:['Brute force','Dictionary attack','Rainbow table','Credential stuffing'],c:1,e:`Dictionary attacks use wordlists of common passwords and variations. Much faster than pure brute force. Common wordlists: rockyou.txt, SecLists. Mitigations: password complexity, dictionary exclusions, MFA.`},
+{d:2,t:['attack_type','password_spraying'],q:`An attacker tries one common password (e.g., "Summer2024!") against thousands of usernames, avoiding account lockouts. This is:`,o:['Brute force','Credential stuffing','Password spraying','Rainbow table attack'],c:2,e:`Password spraying (1 password × many accounts) avoids lockouts triggered by many failed attempts on one account. Hard to detect without volumetric analysis. Mitigations: MFA, monitoring for distributed login failures, unique complex passwords.`},
+{d:2,t:['attack_type','credential_stuffing'],q:`An attacker uses username:password pairs leaked from a previous breach to try logging into many different sites. This is:`,o:['Brute force','Dictionary attack','Credential stuffing','Password spraying'],c:2,e:`Credential stuffing exploits password reuse across sites. Tools: Sentry MBA, OpenBullet. Defenses: MFA, breach monitoring (Have I Been Pwned API), CAPTCHA, rate limiting, device fingerprinting.`},
+{d:2,t:['attack_type','rainbow_table'],q:`An attacker uses a precomputed table of hash-to-plaintext mappings to quickly reverse password hashes. This is a:`,o:['Rainbow table attack','Brute force','Dictionary attack','Birthday attack'],c:0,e:`Rainbow tables trade storage for computation — precomputed hash chains. Defeated by SALT (unique random prefix) making each hash unique. Modern GPU brute forcing has largely replaced rainbow tables.`},
+{d:2,t:['attack_type','birthday'],q:`An attack exploiting the mathematical probability that two random inputs will produce the same hash faster than expected is called a:`,o:['Brute force','Dictionary attack','Birthday attack','Pre-image attack'],c:2,e:`Birthday attack exploits the birthday paradox to find hash collisions. For an n-bit hash, collisions found in ~2^(n/2) operations instead of 2^n. Why SHA-1 (160-bit) is broken — 2^80 ops practical.`},
+{d:2,t:['web_attack','sql_injection'],q:`A web form accepts user input like: <code>' OR '1'='1 --</code> and inserts it directly into a database query, allowing the attacker to bypass authentication. This vulnerability is:`,o:['XSS','CSRF','SQL injection','Buffer overflow'],c:2,e:`SQL injection occurs when user input is concatenated into SQL queries. Mitigations: PARAMETERIZED QUERIES (prepared statements), input validation, stored procedures, ORM frameworks, least-privilege DB accounts, WAF.`},
+{d:2,t:['web_attack','blind_sqli'],q:`An attacker exploits a SQL injection but the application doesn't return query results or errors. By observing whether the page loads or delays, the attacker extracts data one bit at a time. This is:`,o:['Error-based SQLi','Union-based SQLi','Blind SQL injection','Stacked queries'],c:2,e:`Blind SQLi extracts data via inference — boolean-based (response differs) or time-based (SLEEP() delays). Slower but effective when no direct output is visible. Tools: sqlmap automates detection/exploitation.`},
+{d:2,t:['web_attack','xss_reflected'],q:`An attacker crafts a URL with a malicious script in a query parameter. When a victim clicks the URL, the script is reflected back in the page and executes in their browser. This is:`,o:['Stored XSS','Reflected XSS','DOM-based XSS','CSRF'],c:1,e:`Reflected XSS (non-persistent): malicious script in URL/form parameter → reflected in response → executes in victim's browser. Requires victim to click a crafted link. Mitigations: output encoding, CSP, input validation.`},
+{d:2,t:['web_attack','xss_stored'],q:`An attacker posts a comment on a forum containing <code>&lt;script&gt;</code> tags. Every user who views the comment unknowingly executes the malicious script. This is:`,o:['Reflected XSS','Stored XSS','DOM XSS','CSRF'],c:1,e:`Stored (persistent) XSS is the most dangerous — malicious script is stored server-side (DB, logs) and served to all viewers. Affects many users without any interaction. Mitigations: output encoding, input validation, CSP.`},
+{d:2,t:['web_attack','xss_dom'],q:`A web page uses <code>document.location.hash</code> to populate content via JavaScript. An attacker exploits this client-side sink without the server ever processing the payload. This is:`,o:['Reflected XSS','Stored XSS','DOM-based XSS','Blind XSS'],c:2,e:`DOM-based XSS occurs entirely in the browser — client-side JS uses untrusted data (location, referrer) in sinks like innerHTML, eval, document.write. Server never sees the payload. Mitigations: safe DOM APIs (textContent), sanitization libs (DOMPurify), CSP.`},
+{d:2,t:['web_attack','csrf'],q:`A logged-in user visits a malicious page that makes their browser send a request to their bank's transfer endpoint, using their authenticated session. This is:`,o:['XSS','SQL injection','Cross-Site Request Forgery (CSRF)','Session fixation'],c:2,e:`CSRF forces authenticated users to perform unwanted actions on sites where they're logged in. Mitigations: anti-CSRF tokens (synchronizer pattern), SameSite cookies, custom headers (X-Requested-With), re-authentication for sensitive actions.`},
+{d:2,t:['web_attack','ssrf'],q:`A web application accepts a URL from the user and fetches its contents server-side. An attacker submits <code>http://169.254.169.254/latest/meta-data/</code> to access AWS instance metadata. This is:`,o:['XSS','SSRF (Server-Side Request Forgery)','CSRF','Open redirect'],c:1,e:`SSRF abuses server-side URL fetching to access internal resources (metadata APIs, internal services). Capital One 2019 breach exploited SSRF to extract AWS credentials. Mitigations: URL allowlists, IMDSv2 in AWS, egress filtering, disable unused URL schemes.`},
+{d:2,t:['web_attack','xxe'],q:`A web service accepts XML input and processes it without disabling external entity references. An attacker includes a DOCTYPE referencing <code>file:///etc/passwd</code> to read server files. This is:`,o:['XSS','XXE (XML External Entity)','SQL injection','LDAP injection'],c:1,e:`XXE exploits XML parsers that process external entities. Can read local files, SSRF, DoS (billion laughs). Mitigations: disable DTDs/external entities in parsers, use JSON instead of XML, input validation.`},
+{d:2,t:['web_attack','directory_traversal'],q:`A web application accepts a filename parameter. An attacker submits <code>../../../../etc/passwd</code> and retrieves the system's password file. This vulnerability is:`,o:['SQL injection','Directory traversal / Path traversal','Buffer overflow','XSS'],c:1,e:`Path/directory traversal uses ../ sequences to escape intended directories. Also: URL-encoded (%2e%2e%2f), double-encoded, null-byte injection. Mitigations: canonicalization, allowlist validation, chroot jails.`},
+{d:2,t:['web_attack','command_injection'],q:`A web app lets users ping a host. An attacker inputs <code>8.8.8.8; cat /etc/shadow</code> and the server executes both commands. This is:`,o:['SQL injection','Command injection','XXE','XSS'],c:1,e:`OS Command Injection occurs when user input is passed to a shell interpreter. Mitigations: avoid shell invocation, use language APIs instead (e.g., native ping lib), strict input validation (allowlist digits and dots), escape shell metacharacters.`},
+{d:2,t:['web_attack','ldap_injection'],q:`A login form uses user input in an LDAP query. An attacker submits <code>*)(uid=*))(|(uid=*</code> to bypass authentication. This is:`,o:['SQL injection','LDAP injection','XXE','Buffer overflow'],c:1,e:`LDAP injection manipulates LDAP queries via special characters (*, (, ), \\0, etc.). Similar concept to SQLi but targets LDAP directories. Mitigations: input sanitization, parameterized queries, escape LDAP metacharacters.`},
+{d:2,t:['web_attack','deserialization'],q:`A Java application deserializes user-supplied data. An attacker crafts a serialized object that triggers arbitrary code execution during deserialization. This is:`,o:['Buffer overflow','Insecure deserialization','SQL injection','XXE'],c:1,e:`Insecure deserialization occurs when untrusted data is deserialized, potentially triggering gadget chains for RCE. Critical in Java, PHP, Python (pickle). Mitigations: avoid untrusted serialized data, use JSON, signed serialization, runtime protection (RASP).`},
+{d:2,t:['vulnerability','buffer_overflow'],q:`A C program copies user input into a fixed-size buffer without checking length. A long input overwrites the return address, redirecting execution to attacker code. This vulnerability is a:`,o:['Race condition','Buffer overflow','Integer overflow','Use-after-free'],c:1,e:`Buffer overflows overwrite memory past buffer bounds. Stack overflows overwrite return addresses → code execution. Defenses: stack canaries, ASLR, DEP/NX, safe functions (strncpy vs strcpy), memory-safe languages (Rust, Go).`},
+{d:2,t:['vulnerability','integer_overflow'],q:`A program stores an unsigned integer. A calculation produces a value larger than 2^32, wrapping around to a small number, leading to a security bug. This is an:`,o:['Buffer overflow','Integer overflow','Race condition','Memory leak'],c:1,e:`Integer overflow/underflow: arithmetic results exceed type capacity, wrapping to unexpected values. Can bypass size checks, cause memory corruption. Mitigations: use signed types carefully, bounds checking, compiler overflow detection.`},
+{d:2,t:['vulnerability','race_condition'],q:`Two threads concurrently modify a shared counter without synchronization, resulting in a lost update. When attackers exploit timing between check and use, this is called a:`,o:['Race condition (TOCTOU)','Buffer overflow','Integer overflow','Null pointer dereference'],c:0,e:`Race conditions occur when behavior depends on timing. TOCTOU (Time-of-check to Time-of-use) is a security-critical class — check a file then use it, attacker swaps in between. Mitigations: atomic operations, locks, idempotent design.`},
+{d:2,t:['vulnerability','cve_cvss'],q:`A vulnerability is given CVSS v3.1 score of 9.8. What severity classification does this represent?`,o:['Medium','High','Critical','Low'],c:2,e:`CVSS v3.1 ratings: 0.0 None; 0.1–3.9 Low; 4.0–6.9 Medium; 7.0–8.9 High; 9.0–10.0 Critical. A 9.8 = Critical = immediate action required.`},
+{d:2,t:['vulnerability','zero_day'],q:`A vulnerability that has been discovered and exploited by attackers before the vendor has any knowledge of it or has issued a patch is called a:`,o:['Known exploit','Zero-day vulnerability','Logic bomb','CVE'],c:1,e:`Zero-day: attackers have exploits for vulnerabilities unknown to vendors (zero days to patch). Most dangerous because no signatures or patches exist. Defenses: defense in depth, behavioral detection, network segmentation, least privilege.`},
+{d:2,t:['vulnerability','patch_management'],q:`An organization has 1000+ servers with varying software versions. The MOST effective way to reduce vulnerability exposure is:`,o:['Install AV on all servers','Implement a formal patch management process with prioritization based on CVSS and asset criticality','Disable all unnecessary services','Disable external internet access'],c:1,e:`Patch management is foundational. Steps: inventory, vulnerability scanning, prioritize by CVSS + asset criticality + exploit availability, test in staging, deploy, verify. Automation via WSUS, SCCM, Ansible, Intune.`},
+{d:2,t:['supply_chain','third_party'],q:`An attacker compromises a software vendor and injects malicious code into the vendor's legitimate update mechanism, affecting all customers. This is:`,o:['Insider threat','Supply chain attack','Zero-day','Phishing campaign'],c:1,e:`Supply chain attacks target weakest link. Famous: SolarWinds (2020) — backdoored Orion updates affected 18,000 customers. Mitigations: SBOM (Software Bill of Materials), code signing verification, vendor risk management, zero trust.`},
+{d:2,t:['supply_chain','sbom'],q:`A document listing all components, libraries, and dependencies in a software product, used to track supply-chain vulnerabilities, is called a:`,o:['STIX document','SBOM (Software Bill of Materials)','CVE record','CMDB entry'],c:1,e:`SBOM inventories software components with versions, suppliers, and relationships. Critical after Log4Shell — orgs needed to know if log4j was in their stack. Formats: SPDX, CycloneDX. Required by US Executive Order 14028 (2021) for federal software.`},
+{d:2,t:['insider_threat','intentional'],q:`An employee being terminated copies confidential customer data to a personal cloud account before leaving. This is an:`,o:['External attack','Insider threat','Supply chain attack','Phishing incident'],c:1,e:`Insider threats (malicious or negligent) are hard to detect — they have legitimate access. Mitigations: UEBA, DLP, separation of duties, job rotation, offboarding procedures (immediately revoke access), clean desk policies, logging.`},
+{d:2,t:['threat_actors','nation_state'],q:`A highly-resourced, patient, state-sponsored group targeting a nation's critical infrastructure over months is best classified as:`,o:['Script kiddie','Hacktivist','Advanced Persistent Threat (APT)','Insider'],c:2,e:`APTs (often nation-states) are well-funded, patient, targeted. Named by researchers: APT28 (Fancy Bear/GRU), APT29 (Cozy Bear/SVR), APT38 (Lazarus/North Korea), APT41 (China). Goals: espionage, disruption, financial crime. Methods: custom malware, 0-days, supply chain.`},
+{d:2,t:['threat_actors','hacktivist'],q:`A group defaces a corporation's website to protest environmental policies. This group is MOST likely:`,o:['Nation-state','Hacktivists','Organized crime','Script kiddies'],c:1,e:`Hacktivists (Anonymous, LulzSec) are ideologically motivated — political, social, or environmental. Typical attacks: defacement, DDoS, data leaks. Less sophisticated than APTs, more impactful than script kiddies.`},
+{d:2,t:['threat_actors','organized_crime'],q:`A ransomware group operates as "Ransomware-as-a-Service", leasing tools to affiliates in exchange for a cut of profits. This is:`,o:['Hacktivism','Organized crime / financially motivated','Nation-state','Insider'],c:1,e:`Organized cybercrime is financially motivated. RaaS groups: LockBit, ALPHV/BlackCat, Conti, REvil. They run like businesses — developers, negotiators, affiliates. Targets: high-value enterprises, critical infrastructure, healthcare.`},
+{d:2,t:['threat_actors','script_kiddie'],q:`A teenager runs publicly available exploits against random IP addresses hoping to gain access to something interesting. This actor is a:`,o:['APT','Script kiddie','Hacktivist','Nation-state'],c:1,e:`Script kiddies use pre-built tools/scripts without understanding them. Low skill, often high noise, easy to detect. Still dangerous — can stumble into high-value targets or cause collateral damage.`},
+{d:2,t:['threat_actors','shadow_it'],q:`Employees deploy unauthorized SaaS applications without IT approval to solve business problems. This creates a category of risk called:`,o:['Supply chain risk','Shadow IT','Zero-day risk','Insider threat'],c:1,e:`Shadow IT: unsanctioned apps/devices used without IT governance. Risks: data leakage, compliance violations, unpatched vulnerabilities. Mitigations: CASB, approved SaaS catalogs, user education, make approved tools easier to use.`},
+{d:2,t:['threat_intel','ioc'],q:`A security team receives intelligence that a specific file hash (SHA-256) is associated with a known ransomware campaign. This piece of information is an:`,o:['IoA (Indicator of Attack)','IoC (Indicator of Compromise)','TTP','CVE'],c:1,e:`IoCs are forensic artifacts indicating known malicious activity: file hashes, IP addresses, domains, registry keys, URLs. IoAs are behavioral indicators (patterns of actions). TTPs describe broader adversary behavior (Tactics, Techniques, Procedures).`},
+{d:2,t:['threat_intel','mitre_attack'],q:`A framework describing adversary behaviors organized by tactics (goals) and techniques (methods), widely used for threat modeling and detection engineering, is:`,o:['NIST CSF','MITRE ATT&CK','ISO 27001','CIS Controls'],c:1,e:`MITRE ATT&CK catalogs adversary behaviors across 14 tactics (Initial Access, Execution, Persistence, etc.) and hundreds of techniques. Used for red teaming, detection engineering, threat hunting, gap analysis. Enterprise, Mobile, ICS matrices exist.`},
+{d:2,t:['threat_intel','diamond_model'],q:`Which threat intelligence model describes intrusions with four core features: Adversary, Capability, Infrastructure, and Victim?`,o:['Cyber Kill Chain','Diamond Model of Intrusion Analysis','MITRE ATT&CK','STRIDE'],c:1,e:`Diamond Model (2013): every intrusion event has an adversary with a capability using infrastructure against a victim. Captures relationships and enables pivoting in analysis. Complements kill chain and ATT&CK.`},
+{d:2,t:['threat_intel','kill_chain'],q:`Lockheed Martin's model describing attack stages as: Recon → Weaponization → Delivery → Exploitation → Installation → C2 → Actions on Objectives is the:`,o:['Diamond Model','Cyber Kill Chain','MITRE ATT&CK','STRIDE'],c:1,e:`Cyber Kill Chain breaks attacks into 7 linear phases. Enables detection/response at each phase. Critique: linear model doesn't capture complex modern attacks as well as ATT&CK. Still useful for defensive framing.`},
+{d:2,t:['threat_intel','stix_taxii'],q:`Which standards enable automated exchange of structured cyber threat intelligence between organizations and tools?`,o:['SIEM / SOAR','STIX / TAXII','SAML / OAuth','YARA / Sigma'],c:1,e:`STIX (Structured Threat Information eXpression) is a language for describing threats; TAXII (Trusted Automated eXchange of Intelligence Information) is the transport protocol. Enables ISACs and vendors to share IoCs at machine speed.`},
+{d:2,t:['threat_intel','yara'],q:`A detection language that uses pattern matching to identify malware families based on strings and binary patterns in files is:`,o:['YARA','Sigma','Snort','STIX'],c:0,e:`YARA uses rules with strings and condition sections to identify files matching malware signatures. Widely used in threat intel and incident response. Sigma is YARA-like for log detection (SIEM-agnostic). Snort/Suricata for network IDS rules.`},
+{d:2,t:['vuln_assessment','types'],q:`An organization scans their external web applications for vulnerabilities from an unauthenticated perspective, simulating an external attacker. This is a:`,o:['White-box authenticated scan','Black-box unauthenticated scan','Credentialed scan','Internal vulnerability scan'],c:1,e:`Unauthenticated/black-box scans find vulnerabilities visible to external attackers. Authenticated/credentialed scans log in and find deeper issues (missing patches, misconfigurations). Both types needed for comprehensive coverage.`},
+{d:2,t:['vuln_assessment','false_positive'],q:`A vulnerability scanner reports a critical SQL injection on a public web form. After investigation, the input is properly parameterized and not exploitable. This is a:`,o:['True positive','False positive','True negative','False negative'],c:1,e:`False positive: tool reports issue that doesn't exist. Common with vulnerability scanners (signature-matching without context). Must be triaged. False negatives (missed real vulns) are more dangerous — may require multiple tools for coverage.`},
+{d:2,t:['vuln_assessment','cve_enrichment'],q:`A CVE is a:`,o:['Vulnerability scanning tool','Common Vulnerabilities and Exposures identifier assigning a unique ID to disclosed vulnerabilities','Cryptographic vulnerability evaluator','Compliance standard'],c:1,e:`CVE IDs (CVE-YYYY-NNNNN) uniquely identify publicly disclosed vulnerabilities. Managed by MITRE. Databases: NVD (NIST) provides enrichment (CVSS, CPE). Vendors and researchers request CVE IDs for new vulnerabilities.`},
+{d:2,t:['web_vuln','owasp_top10'],q:`Which organization publishes the OWASP Top 10, a widely-used awareness list of the most critical web application security risks?`,o:['NIST','OWASP (Open Worldwide Application Security Project)','ISO','SANS'],c:1,e:`OWASP Top 10 is updated every few years (latest 2021). Current top categories include Broken Access Control, Cryptographic Failures, Injection, Insecure Design. Essential framework for AppSec programs.`},
+{d:2,t:['cloud_attack','misconfiguration'],q:`An organization leaves an AWS S3 bucket with customer data publicly accessible due to misconfiguration. This is an example of:`,o:['Supply chain attack','Cloud misconfiguration','Zero-day','DDoS'],c:1,e:`Cloud misconfigurations are a top cause of cloud breaches (Capital One, Accenture, many others). Solutions: CSPM (Cloud Security Posture Management), IaC scanning (Checkov, tfsec), default-deny policies, IAM reviews, bucket access policies.`},
+{d:2,t:['cloud_attack','account_takeover'],q:`An attacker compromises a cloud root/admin account via credential theft and spins up hundreds of crypto-mining instances at the victim's expense. This is:`,o:['DDoS','Cryptojacking via cloud account takeover','Supply chain attack','Side-channel attack'],c:1,e:`Cloud account takeover enables cryptojacking, data exfil, or further attacks. Defenses: MFA for all users (especially root), least privilege IAM, billing alerts, anomaly detection (GuardDuty), avoid long-lived access keys (use IAM roles/STS).`},
+{d:2,t:['mobile','sideloading'],q:`A user installs an APK file from an unknown website on their Android phone, bypassing the Play Store. This practice is called:`,o:['Rooting','Sideloading','Jailbreaking','Tethering'],c:1,e:`Sideloading installs apps from outside official stores — no Google/Apple security review. Bypasses Play Protect/App Store scanning. Common vector for malware. Enterprise mitigations: MDM policies restricting sideloading.`},
+{d:2,t:['mobile','jailbreak_root'],q:`Gaining root-level access to iOS by exploiting vulnerabilities to bypass Apple's restrictions is called:`,o:['Rooting','Jailbreaking','Sideloading','Tethering'],c:1,e:`Jailbreaking (iOS) or rooting (Android) removes manufacturer restrictions — allows arbitrary apps, kernel modifications. Disables many security features (sandbox, code signing). Enterprise policies detect and block jailbroken devices via MDM.`},
+{d:2,t:['mobile','bluejacking'],q:`Sending unsolicited messages to a nearby Bluetooth device for pranks or advertising is called:`,o:['Bluejacking','Bluesnarfing','Bluebugging','Bluesmacking'],c:0,e:`Bluejacking: unsolicited messages (low severity). Bluesnarfing: unauthorized data extraction. Bluebugging: remote control of device. Bluesmacking: Bluetooth DoS. Mitigations: pair only known devices, disable discoverability, keep firmware updated.`},
+{d:2,t:['wireless','rogue_ap'],q:`An attacker sets up a Wi-Fi access point with the SSID "Starbucks Free WiFi" in a coffee shop to capture user credentials via a captive portal. This is a:`,o:['Evil twin / Rogue AP','WPS attack','KRACK attack','Deauthentication attack'],c:0,e:`Evil twin is a malicious AP mimicking a legitimate one. Captures credentials or enables on-path attacks. Often combined with deauth attacks to force clients to reconnect. Defenses: VPN on public WiFi, certificate validation, WPA3.`},
+{d:2,t:['wireless','wps'],q:`Which Wi-Fi security feature is considered FUNDAMENTALLY INSECURE due to a design flaw allowing brute-force recovery of the 8-digit PIN?`,o:['WPA2','WPS','WPA3','802.1X'],c:1,e:`WPS (Wi-Fi Protected Setup) PIN can be brute-forced in hours due to splitting PIN into 4+3 digits with checksum (11,000 combos). Always disable WPS on routers. Reaver, Bully are attack tools.`},
+{d:2,t:['wireless','wpa3'],q:`Which Wi-Fi security protocol replaces WPA2's 4-way handshake with SAE (Simultaneous Authentication of Equals) to resist offline dictionary attacks?`,o:['WEP','WPA','WPA2','WPA3'],c:3,e:`WPA3 (2018) uses SAE (Dragonfly handshake) preventing offline dictionary attacks. Also provides forward secrecy and individualized encryption on open networks (OWE — Enhanced Open). WPA2 handshakes capturable for offline cracking (hashcat).`},
+{d:2,t:['wireless','deauth'],q:`An attacker sends forged 802.11 deauthentication frames to disconnect all clients from an access point, allowing them to capture WPA2 handshakes when clients reconnect. This is a:`,o:['Evil twin','Deauthentication attack','KRACK','WPS attack'],c:1,e:`Deauth attacks exploit unprotected management frames in 802.11. Tools: aireplay-ng. Mitigation: 802.11w (Protected Management Frames) required in WPA3, optional in WPA2. Forces handshake recapture for cracking.`},
+{d:2,t:['mitigation','patching'],q:`Which mitigation strategy is MOST directly addressing CVEs with known exploits?`,o:['Network segmentation','Patch management','SIEM deployment','Security awareness training'],c:1,e:`Patching remediates the root cause by removing the vulnerability. Prioritize by exploit availability (CISA KEV catalog), CVSS, and asset criticality. Compensating controls (segmentation, WAF) when patches unavailable.`},
+{d:2,t:['mitigation','segmentation'],q:`An organization isolates payment processing systems on a separate VLAN with strict firewall rules, preventing other parts of the network from reaching it. This is:`,o:['Air gap','Network segmentation','Zero trust','Honeypot'],c:1,e:`Network segmentation reduces blast radius — compromise of one segment doesn't expose all. Micro-segmentation goes further (host-level). Essential for PCI DSS compliance. Technologies: VLANs, firewalls, SDN, host firewalls.`},
+{d:2,t:['mitigation','hardening'],q:`Disabling unused services, removing default accounts, closing unneeded ports, and applying secure configurations on a new server is called:`,o:['Vulnerability scanning','System hardening','Incident response','Threat modeling'],c:1,e:`System hardening reduces attack surface. Resources: CIS Benchmarks, DISA STIGs, vendor hardening guides. Tools: Lynis, OpenSCAP, Microsoft Security Compliance Toolkit. Apply at baseline image level.`},
+{d:2,t:['mitigation','allowlisting'],q:`A security team configures servers to only allow a specific pre-approved list of applications to execute. This defense is called:`,o:['Blocklisting / blacklisting','Allowlisting / whitelisting','Sandboxing','Signature-based AV'],c:1,e:`Application allowlisting (AppLocker, WDAC, SELinux) is more effective than blocklisting — only approved code runs. Prevents 0-days and fileless attacks. Higher operational overhead. AppLocker on Windows; root-of-trust verification on servers.`},
+{d:2,t:['mitigation','edr'],q:`Which security technology continuously monitors endpoint activities (process, registry, network) and uses behavioral analytics to detect and respond to advanced threats?`,o:['Antivirus','Firewall','EDR (Endpoint Detection and Response)','SIEM'],c:2,e:`EDR collects detailed endpoint telemetry, detects behaviors, enables response (isolate host, kill process, roll back). Examples: CrowdStrike Falcon, SentinelOne, Microsoft Defender for Endpoint. XDR extends across email, identity, cloud, network.`},
+{d:2,t:['mitigation','dlp'],q:`A system that monitors data in motion, at rest, and in use, preventing sensitive data (PII, PHI, IP) from leaving the organization is:`,o:['IDS','DLP (Data Loss Prevention)','CASB','SIEM'],c:1,e:`DLP classifies data and enforces policies at endpoints, network egress, email, and cloud. Detects patterns (credit cards, SSNs) and blocks exfiltration. CASB extends DLP to cloud apps (Salesforce, O365).`},
+{d:2,t:['mitigation','uba_ueba'],q:`A security tool builds behavioral baselines for users and entities, then alerts on deviations (e.g., user logs in at 3 AM from a new country and downloads 10 GB). This is:`,o:['SIEM','UEBA (User and Entity Behavior Analytics)','EDR','DLP'],c:1,e:`UEBA uses ML to detect insider threats, compromised accounts, and anomalies that don't match signatures. Effective against slow, low-and-slow attacks. Vendors: Exabeam, Securonix, Splunk UBA. Often integrated into SIEM.`},
+{d:2,t:['industrial_systems','ics_scada'],q:`Industrial Control Systems (ICS) and SCADA networks that manage power plants and factories are typically protected by:`,o:['Installing antivirus on all PLCs','Network segmentation, air gaps, and OT-specific monitoring','Public cloud migration','Frequent patching every 24 hours'],c:1,e:`OT networks can't patch frequently (availability critical, legacy systems, certification requirements). Protection: ISA/IEC 62443, Purdue Model zoning, unidirectional gateways (data diodes), OT-specific monitoring (Claroty, Nozomi), strict access control.`},
+{d:2,t:['iot_security','default_creds'],q:`A major security issue with consumer IoT devices (cameras, smart bulbs, DVRs) that led to the Mirai botnet is:`,o:['Excessive CPU power','Default/hardcoded credentials and lack of updates','Too much encryption','Expensive subscriptions'],c:1,e:`Mirai (2016) exploited default credentials (admin/admin) in IoT devices, creating a massive botnet for 1+ Tbps DDoS attacks. Mitigations: change defaults, network segmentation (IoT VLAN), automatic updates, buy reputable brands.`}
+
+
+// ─────────────────────────────────────────────
+// DOMAIN 3 — THREATS, VULNERABILITIES & MITIGATIONS (110 Q)
+// ─────────────────────────────────────────────
+
+{d:3,t:['firewall','stateful'],q:`A firewall that tracks the state of active connections and makes decisions based on context (e.g., allowing return traffic for established connections) is a:`,o:['Stateless / packet-filter firewall','Stateful inspection firewall','Application-layer gateway','Next-generation firewall'],c:1,e:`Stateful firewalls maintain connection state tables — allow return traffic for established sessions without explicit rules. More secure than stateless. Modern NGFWs add deep packet inspection, IPS, app awareness, user identity.`},
+{d:3,t:['firewall','ngfw'],q:`A firewall that combines traditional filtering with deep packet inspection, application awareness, IPS, and user identity integration is called:`,o:['Packet filter','Proxy firewall','Next-Generation Firewall (NGFW)','Host-based firewall'],c:2,e:`NGFWs (Palo Alto, Fortinet, Check Point) integrate multiple security functions: app identification (App-ID), user identity (User-ID), IPS signatures, URL filtering, SSL decryption, threat intel feeds.`},
+{d:3,t:['firewall','waf'],q:`A security device specifically designed to protect web applications by inspecting HTTP/HTTPS traffic and blocking attacks like SQLi and XSS is a:`,o:['Next-generation firewall','Web Application Firewall (WAF)','Proxy server','DLP appliance'],c:1,e:`WAFs (Cloudflare, AWS WAF, F5, ModSecurity) operate at Layer 7 and use rules (OWASP Core Rule Set) to block web attacks. Deployed as reverse proxy. Can be cloud-based, hardware, or software.`},
+{d:3,t:['firewall','host_based'],q:`Windows Defender Firewall and iptables/nftables protect individual systems rather than networks. These are:`,o:['Network firewalls','Host-based firewalls','NGFWs','WAFs'],c:1,e:`Host-based firewalls protect individual endpoints — last line of defense after network firewalls. Essential for laptops on untrusted networks and segmented internal traffic. Managed centrally via GPO, MDM, or EDR.`},
+{d:3,t:['ids_ips','nids_hids'],q:`An intrusion detection system deployed at a network choke point, inspecting all traffic flowing through it, is called a:`,o:['HIDS (Host-based IDS)','NIDS (Network-based IDS)','WAF','EDR'],c:1,e:`NIDS (Snort, Suricata, Zeek) monitors network traffic for signatures and anomalies. HIDS (OSSEC, Wazuh) monitors host-level activities (files, processes, logs). Complementary; most orgs use both.`},
+{d:3,t:['ids_ips','inline'],q:`An IPS deployed inline can actively BLOCK malicious traffic, unlike an IDS which only alerts. What is a key deployment consideration for an IPS?`,o:['Cost of the appliance','False positives cause legitimate traffic to be blocked — careful tuning required','Requires agents on every host','Only detects zero-day attacks'],c:1,e:`IPS inline risks: blocking legitimate traffic (false positives), becoming a SPoF, introducing latency. Mitigations: careful tuning, fail-open designs, high-availability pairs, gradual rollout from detect-only mode.`},
+{d:3,t:['network_architecture','dmz'],q:`A network segment that hosts internet-facing services (web, email, DNS) between the internet and internal network, protected by firewalls on both sides, is a:`,o:['VPN','DMZ (Demilitarized Zone) / screened subnet','VLAN','Intranet'],c:1,e:`DMZ (or "screened subnet" in modern terminology) isolates internet-facing services. If compromised, attackers still face internal firewall. Services in DMZ should never directly connect to internal DBs — use application proxies.`},
+{d:3,t:['network_architecture','air_gap'],q:`A network with NO physical or logical connection to any other network, providing the highest isolation for critical systems, is:`,o:['DMZ','Air gap','VLAN','VPN'],c:1,e:`Air gaps physically isolate critical systems (SCADA, classified networks). Even air gaps have been bypassed (Stuxnet via USB). Data transfer requires strict procedures — data diodes, validated removable media.`},
+{d:3,t:['network_architecture','segmentation'],q:`Logically separating a network into segments using switches and VLANs to contain breaches is called:`,o:['Routing','Network segmentation','Load balancing','NAT'],c:1,e:`Segmentation uses VLANs, subnets, firewalls, and ACLs to limit lateral movement. Micro-segmentation goes to workload level (NSX, Illumio, Azure Network Security Groups). Zero-trust requires micro-segmentation.`},
+{d:3,t:['network_architecture','zero_trust'],q:`Which of the following is NOT a core principle of Zero Trust?`,o:['Never trust, always verify','Assume breach','Implicit trust within the network perimeter','Least privilege access'],c:2,e:`Zero Trust eliminates implicit trust based on network location — the opposite of perimeter-based "castle and moat". Every request is verified, authenticated, encrypted. NIST SP 800-207 defines the framework.`},
+{d:3,t:['vpn','types'],q:`Which VPN type establishes a permanent encrypted tunnel between two organization sites (e.g., HQ and branch) across the internet?`,o:['Remote-access VPN','Site-to-site VPN','SSL portal VPN','Tunnel mode client'],c:1,e:`Site-to-site VPNs (IPsec or SD-WAN) provide persistent tunnels between networks. Remote-access VPNs connect individual users (IPsec, SSL/TLS, WireGuard). Client-to-site vs site-to-site is the key distinction.`},
+{d:3,t:['vpn','split_tunneling'],q:`A remote worker's VPN is configured so that only traffic destined for corporate resources goes through the VPN, while internet browsing goes directly. This configuration is called:`,o:['Full tunnel','Split tunneling','Dual-homed','Clientless'],c:1,e:`Split tunneling saves bandwidth and improves performance but bypasses corporate security controls for internet traffic (no WAF, DLP, URL filter). Full tunnel routes ALL traffic through corporate network — more secure but slower.`},
+{d:3,t:['ztna','saas'],q:`A modern alternative to VPN that provides identity-based, application-specific access instead of broad network access, aligned with zero trust principles, is:`,o:['Site-to-site VPN','Zero Trust Network Access (ZTNA)','SSL portal','TACACS+'],c:1,e:`ZTNA (Zscaler Private Access, Cloudflare Access) provides per-app access based on identity, device posture, and context. No network-wide access even after authentication. Replaces legacy VPNs in modern SASE architectures.`},
+{d:3,t:['sase','cloud_native'],q:`A cloud-native architecture that converges network security (FWaaS, SWG, CASB, ZTNA) with WAN capabilities (SD-WAN) delivered as a unified service is:`,o:['SIEM','SASE (Secure Access Service Edge)','SOAR','MDR'],c:1,e:`SASE (Gartner, 2019) delivers networking + security from the cloud edge. Vendors: Netskope, Zscaler, Palo Alto Prisma, Cisco Umbrella. Best for distributed workforces and cloud-first architectures.`},
+{d:3,t:['network_devices','switch'],q:`At which OSI layer does a traditional network switch operate?`,o:['Layer 1 (Physical)','Layer 2 (Data Link)','Layer 3 (Network)','Layer 7 (Application)'],c:1,e:`Switches operate at Layer 2 (MAC addresses, Ethernet frames). L3 switches add routing. Routers are Layer 3 (IP). Firewalls span L3-L7. Application proxies operate at L7.`},
+{d:3,t:['network_devices','proxy'],q:`A device that sits between clients and servers, forwarding requests and often providing caching, URL filtering, and SSL inspection, is a:`,o:['Firewall','Proxy server','Router','Load balancer'],c:1,e:`Forward proxies sit between internal clients and external servers — used for URL filtering, caching, SSL inspection. Reverse proxies sit in front of servers — used for load balancing, SSL termination, WAF, caching.`},
+{d:3,t:['network_devices','load_balancer'],q:`A device that distributes incoming network traffic across multiple servers to optimize resource use, maximize throughput, and prevent overload is a:`,o:['Firewall','Load balancer','Proxy','Gateway'],c:1,e:`Load balancers (F5, HAProxy, NGINX, AWS ALB) distribute traffic using algorithms (round-robin, least-connections, hash). Also provide health checks, SSL termination, session persistence. Can be L4 (TCP) or L7 (HTTP) based.`},
+{d:3,t:['network_devices','jump_server'],q:`An administrator connects to an intermediate hardened server before SSHing to production systems. This intermediate server is a:`,o:['Bastion host / jump server','DMZ host','Load balancer','Reverse proxy'],c:0,e:`Jump servers (bastion hosts) centralize admin access, enable logging/auditing, reduce attack surface. Only jump server exposes SSH externally; production servers only allow jump server. Modern approach: PAM solutions (CyberArk, Teleport).`},
+{d:3,t:['vlans','segmentation'],q:`What is the PRIMARY security benefit of VLANs?`,o:['Increase bandwidth','Logically separate traffic without requiring separate physical switches','Encrypt traffic','Authenticate users'],c:1,e:`VLANs (802.1Q) segment broadcast domains on a single switch, isolating traffic between segments. Saves hardware, enables flexible segmentation. VLAN hopping attacks possible — use dedicated native VLAN, disable unused ports, DTP negotiation off.`},
+{d:3,t:['nac','network_access'],q:`A solution that authenticates devices connecting to the network, checks their compliance (patches, AV running), and places them in appropriate VLANs (or quarantine) is:`,o:['DHCP','NAC (Network Access Control)','DNS','VPN'],c:1,e:`NAC (Cisco ISE, Aruba ClearPass, Forescout) integrates with 802.1X, RADIUS, and posture assessment. Pre-admission: block unknown devices. Post-admission: continuous compliance. Critical for BYOD and IoT environments.`},
+{d:3,t:['8021x','radius'],q:`Which port-based network access control standard is used with RADIUS to authenticate devices before allowing network access?`,o:['802.11ac','802.1X','802.3af','802.1Q'],c:1,e:`802.1X provides port-based authentication. Supplicant (device) → authenticator (switch/AP) → authentication server (RADIUS). Enterprise WPA2/3 uses 802.1X with EAP methods (EAP-TLS most secure, PEAP, EAP-TTLS).`},
+{d:3,t:['virtualization','hypervisor'],q:`A hypervisor that runs DIRECTLY on the host hardware without a host OS (used in enterprise data centers) is:`,o:['Type 1 (bare-metal) hypervisor','Type 2 (hosted) hypervisor','Virtual appliance','Container runtime'],c:0,e:`Type 1 hypervisors (VMware ESXi, Microsoft Hyper-V, Xen, KVM) run on bare metal — better performance, isolation, security. Type 2 (VMware Workstation, VirtualBox) run on top of an OS — for desktops.`},
+{d:3,t:['virtualization','vm_escape'],q:`A critical security concern in virtualized environments is when a guest VM breaks out of its isolation and accesses the host. This is called:`,o:['Rootkit','VM escape / VM breakout','Sandbox escape','Container escape'],c:1,e:`VM escape exploits hypervisor vulnerabilities to compromise the host or other VMs on it. Historically rare but catastrophic (VENOM 2015, CPU side-channels like Spectre). Defenses: patch hypervisors, minimize exposed interfaces, separate management networks.`},
+{d:3,t:['containers','docker_k8s'],q:`Containers (Docker, Kubernetes) share the HOST OS kernel. A critical security difference from VMs is:`,o:['Containers are always more secure','Containers have weaker isolation than VMs due to shared kernel','Containers use less memory','Containers use different CPU architectures'],c:1,e:`Containers share host kernel — a kernel exploit can compromise all containers. VMs have full hypervisor isolation. Mitigations: rootless containers, seccomp/AppArmor/SELinux, gVisor or Kata for stronger isolation, image scanning, distroless images, keep host kernel patched.`},
+{d:3,t:['containers','supply_chain'],q:`Which practice is CRITICAL to prevent supply chain attacks when using public container images?`,o:['Use the latest tag','Scan images for vulnerabilities, use signed images from trusted registries, pin specific digests','Disable network access','Run only on Windows hosts'],c:1,e:`Container supply chain security: scan images (Trivy, Grype, Snyk), verify signatures (Cosign, Notary), use minimal base images (distroless, alpine), pin by digest not tag, use private registries, SBOM generation.`},
+{d:3,t:['cloud_models','iaas_paas_saas'],q:`A company uses AWS EC2 virtual machines and manages the OS, middleware, and applications. The cloud service model is:`,o:['SaaS','PaaS','IaaS (Infrastructure as a Service)','FaaS'],c:2,e:`IaaS = customer manages OS and up, provider manages virtualization and below (AWS EC2, Azure VMs). PaaS = provider manages OS and runtime (Heroku, App Engine). SaaS = provider manages everything (Salesforce, O365). Shared responsibility shifts based on model.`},
+{d:3,t:['cloud_models','responsibility'],q:`In AWS, who is responsible for patching the OS of an EC2 Linux instance?`,o:['AWS','The customer','Shared equally','Third-party provider'],c:1,e:`AWS Shared Responsibility: AWS secures "of the cloud" (facilities, hardware, hypervisor, service software). Customer secures "in the cloud" (OS patching, data, IAM, encryption, network config). Critical to understand — misconfigurations are customer\\'s responsibility.`},
+{d:3,t:['cloud_deploy','public_private_hybrid'],q:`A cloud environment used exclusively by a single organization, either hosted internally or by a third party, is a:`,o:['Public cloud','Private cloud','Hybrid cloud','Community cloud'],c:1,e:`Private cloud: single tenant, maximum control/isolation. Public cloud: shared multi-tenant (AWS, Azure, GCP). Hybrid: combination with connectivity between. Community: shared among orgs with common requirements (HealthCare, GovCloud).`},
+{d:3,t:['cloud_security','casb'],q:`A security broker that sits between cloud service users and providers, enforcing security policies for SaaS applications (Office 365, Salesforce), is a:`,o:['WAF','SIEM','CASB (Cloud Access Security Broker)','NAC'],c:2,e:`CASBs (Netskope, McAfee MVision, Microsoft Defender for Cloud Apps) provide visibility, DLP, threat protection, compliance for SaaS. 4 pillars: Visibility, Compliance, Data Security, Threat Protection.`},
+{d:3,t:['cloud_security','cspm'],q:`A tool that continuously scans cloud infrastructure (AWS, Azure, GCP) for misconfigurations and compliance violations is:`,o:['WAF','CSPM (Cloud Security Posture Management)','EDR','SIEM'],c:1,e:`CSPM (Wiz, Prisma Cloud, Orca) identifies misconfigured IAM, open S3 buckets, unencrypted databases, exposed ports. Critical as most cloud breaches stem from misconfigurations. Also: CNAPP combines CSPM + CWPP + CIEM.`},
+{d:3,t:['cloud_security','cwpp'],q:`A solution providing security for cloud workloads (VMs, containers, serverless) including vulnerability management and runtime protection is:`,o:['CSPM','CWPP (Cloud Workload Protection Platform)','SIEM','WAF'],c:1,e:`CWPP (SentinelOne, CrowdStrike, Prisma Cloud) protects workloads at runtime — similar to EDR but designed for ephemeral cloud workloads. Agent-based or agentless. CNAPP = CSPM + CWPP + CIEM + IaC scanning.`},
+{d:3,t:['iam','least_privilege'],q:`An IAM policy granting a user "s3:*" on all buckets when they only need read access to one specific bucket violates which principle?`,o:['Defense in depth','Least privilege','Separation of duties','Zero trust'],c:1,e:`IAM least privilege = minimum permissions for job function. AWS tools: IAM Access Analyzer, Access Advisor (reveals unused permissions). Right-size permissions regularly. Excessive permissions are a leading cloud breach cause.`},
+{d:3,t:['iam','roles_vs_keys'],q:`In AWS, what is the preferred method for an EC2 instance to access S3 instead of storing access keys on the instance?`,o:['Embed keys in application config','Use IAM roles (instance profiles)','Use anonymous access','Use shared credentials files'],c:1,e:`IAM roles with instance profiles provide temporary credentials rotated automatically by AWS — no long-lived keys on disk. Access keys should be avoided where roles can be used. When keys required, use AWS Secrets Manager, never commit to git.`},
+{d:3,t:['iam','privileged_access'],q:`A solution that vaults privileged credentials, enforces just-in-time access, records sessions, and eliminates standing admin rights is:`,o:['LDAP','PAM (Privileged Access Management)','SSO','RBAC'],c:1,e:`PAM (CyberArk, BeyondTrust, Delinea) manages privileged accounts. Features: credential vaulting, password rotation, session recording, JIT/JEA (Just-In-Time / Just-Enough-Access). Critical for compliance (PCI, SOC2) and breach prevention.`},
+{d:3,t:['iam','identity_federation'],q:`A company allows users to authenticate to AWS using their on-premises Active Directory credentials via SAML. This is called:`,o:['Single factor','Federated identity','Shadow IT','Direct authentication'],c:1,e:`Federation allows identities from one domain (IdP) to be trusted in another (SP). Benefits: central user management, SSO, reduced credential sprawl. Standards: SAML 2.0, OIDC, WS-Federation. AWS IAM Identity Center (formerly SSO) supports federation.`},
+{d:3,t:['encryption','at_rest'],q:`Which technology provides encryption of data stored on a laptop\\'s hard drive, protecting against data theft from device loss?`,o:['TLS','BitLocker / FileVault / LUKS (Full Disk Encryption)','IPsec','SSH'],c:1,e:`FDE (BitLocker/Windows, FileVault/macOS, LUKS/Linux) encrypts entire disk at sector level, protecting data at rest. Keys typically sealed in TPM. Unlocked at boot with PIN/password/biometric. Essential for laptop security.`},
+{d:3,t:['encryption','file_vs_disk'],q:`Which technology provides encryption of specific files or directories (not the whole disk), allowing granular protection within an OS?`,o:['BitLocker','EFS (Encrypting File System) / eCryptfs','BIOS password','TPM'],c:1,e:`File-level encryption (EFS on Windows, eCryptfs on Linux) encrypts individual files — can protect sensitive data even within a running system. Complementary to FDE. Drawback: users must understand when encryption is applied.`},
+{d:3,t:['encryption','in_transit'],q:`Which protocol secures data in transit between a web browser and server, currently in version 1.3?`,o:['SSH','TLS (Transport Layer Security)','IPsec','S/MIME'],c:1,e:`TLS secures HTTP (→ HTTPS), SMTP, IMAP, FTP, etc. Current versions: TLS 1.2 (widely supported), TLS 1.3 (modern, recommended). Certificate-based authentication. TLS 1.0/1.1 deprecated (POODLE, BEAST vulnerabilities).`},
+{d:3,t:['encryption','client_side'],q:`An organization wants to ensure cloud providers cannot access their data even if compromised. The BEST approach is:`,o:['Trust provider-managed encryption','Client-side encryption with customer-managed keys','Obfuscation','Access control lists only'],c:1,e:`Client-side encryption: data encrypted BEFORE sending to cloud, keys controlled by customer (BYOK — Bring Your Own Key). Cloud provider sees only ciphertext. Trade-off: loses some cloud features (search, indexing). AWS S3 client-side, Azure Always Encrypted.`},
+{d:3,t:['encryption','hsm'],q:`A tamper-resistant hardware device that securely generates, stores, and manages cryptographic keys, providing the highest assurance for key management, is a:`,o:['TPM','HSM (Hardware Security Module)','Secure Enclave','Smart card'],c:1,e:`HSMs (Thales, Yubico, AWS CloudHSM) store keys in tamper-resistant hardware — keys never leave. Perform crypto ops internally. FIPS 140-2/3 certified. Used in PKI CAs, payment systems (PCI HSM), high-value cryptography.`},
+{d:3,t:['encryption','tpm'],q:`A chip embedded in modern computers that securely stores cryptographic keys and enables features like BitLocker and Secure Boot is:`,o:['HSM','TPM (Trusted Platform Module)','CPU cache','BIOS chip'],c:1,e:`TPM (Trusted Platform Module) is a chip on motherboard. Provides secure key storage, random number generation, platform attestation. Required for Windows 11, essential for BitLocker, measured boot. TPM 2.0 is current spec.`},
+{d:3,t:['encryption','secure_boot'],q:`A firmware-level security feature that verifies each boot component (bootloader, kernel) is signed by a trusted authority before execution, preventing rootkits from loading is:`,o:['Secure Boot','Fast Boot','Network Boot','Wake-on-LAN'],c:0,e:`Secure Boot (UEFI) prevents unsigned/modified bootloaders and early malware (bootkits). Chain of trust from firmware → bootloader → kernel. Essential for modern OS security. Linux can use Shim for signed bootloader.`},
+{d:3,t:['encryption','key_management'],q:`A centralized service for managing the lifecycle of cryptographic keys (generation, rotation, revocation) across an organization is:`,o:['PKI','KMS (Key Management System/Service)','SIEM','IAM'],c:1,e:`KMS (AWS KMS, Azure Key Vault, HashiCorp Vault, GCP KMS) centralizes key operations. Benefits: secure storage, automatic rotation, audit logs, HSM-backed options, envelope encryption. Foundation of cloud encryption.`},
+{d:3,t:['data_states','rest_transit_use'],q:`Data that is being actively processed in a system\\'s memory or CPU is in which state?`,o:['Data at rest','Data in transit','Data in use (in processing)','Data archived'],c:2,e:`Data in use is the hardest to protect — decrypted in memory for processing. Protections: secure enclaves (Intel SGX, AMD SEV), confidential computing, homomorphic encryption (compute on encrypted data, emerging), memory encryption.`},
+{d:3,t:['pki','trust_hierarchy'],q:`In a PKI, which entity\\'s private key signs issued certificates, establishing trust?`,o:['Registration Authority (RA)','Certificate Authority (CA)','Validation Authority','Client'],c:1,e:`The CA\\'s private key signs certificates, binding public keys to identities. Clients trust certificates because they trust the CA (root certificate in trust store). RA verifies identity before issuance; VA handles revocation status checking.`},
+{d:3,t:['pki','root_intermediate'],q:`Why do most CAs use an offline root CA and online intermediate CAs to sign end-entity certificates?`,o:['To increase complexity','If intermediate CAs are compromised, only those certificates need revocation, not all certs ever issued','Intermediate CAs are faster','Regulatory requirement'],c:1,e:`Offline root CA stays offline (often in HSM, physical vault). Intermediate CAs sign daily. If intermediate compromised, revoke and reissue from root — but root remains trusted. Best practice for limiting blast radius.`},
+{d:3,t:['pki','san_wildcard'],q:`Which certificate type secures multiple specific subdomains (www, mail, api) in a single certificate?`,o:['Wildcard certificate','SAN (Subject Alternative Name) certificate','EV certificate','Self-signed certificate'],c:1,e:`SAN certs list specific domains/subdomains (www.example.com, mail.example.com). Wildcard (*.example.com) covers ALL subdomains but can\\'t be used for sub-subdomains (not a.b.example.com). Wildcards have more risk — single compromise affects all subdomains.`},
+{d:3,t:['pki','pinning'],q:`A mobile app hard-codes the expected certificate (or public key) of its backend server, rejecting any other certificate even if signed by a trusted CA. This technique is:`,o:['Certificate stapling','Certificate pinning','Certificate transparency','Certificate revocation'],c:1,e:`Certificate pinning prevents MITM via rogue/compromised CAs. Trade-off: breaks if pinned cert changes without update. Modern approach: HPKP (deprecated) → Certificate Transparency + Expect-CT. Apps: dynamic pinning, backup pins.`},
+{d:3,t:['high_availability','redundancy'],q:`A design where multiple components (servers, power supplies, network paths) provide failover if any single one fails is:`,o:['Load balancing','Redundancy','Backup','Clustering'],c:1,e:`Redundancy eliminates single points of failure. Examples: redundant power supplies, dual NICs (NIC teaming), multiple ISPs, clustered servers. Essential for high availability. RAID provides redundancy at storage level.`},
+{d:3,t:['high_availability','failover'],q:`An active-passive cluster configuration where a standby server takes over if the primary fails with minimal interruption is called:`,o:['Load balancing','Failover clustering','Round-robin','Anycast'],c:1,e:`Failover clusters (Windows Server Failover Clustering, Linux Pacemaker) use shared storage and heartbeat monitoring. Active-passive: only primary serves traffic. Active-active: all nodes serve traffic (load balanced). RTO is near-zero for hot standby.`},
+{d:3,t:['raid','storage'],q:`Which RAID level provides disk striping with parity, tolerating one drive failure while preserving storage efficiency?`,o:['RAID 0','RAID 1','RAID 5','RAID 10'],c:2,e:`RAID 0: striping, no redundancy (performance). RAID 1: mirroring, 50% overhead. RAID 5: striping+parity, 1 drive failure tolerance, ~1/N overhead. RAID 6: 2 drive failure tolerance. RAID 10: mirror then stripe (performance + redundancy).`},
+{d:3,t:['backup','types'],q:`Which backup type captures only files that have changed since the LAST backup (full or incremental)?`,o:['Full backup','Differential backup','Incremental backup','Snapshot'],c:2,e:`Full: all data each time. Incremental: changes since last backup (fast backup, slower restore — need full + all incrementals). Differential: changes since last FULL backup (middle ground). Snapshot: point-in-time copy (efficient, not a true backup alone).`},
+{d:3,t:['backup','321_rule'],q:`The "3-2-1" backup rule specifies:`,o:['3 backups, 2 locations, 1 offsite','3 copies of data, 2 different media types, 1 copy offsite','3 types of backups, 2 hours to restore, 1 verification','Test backups 3 times per 2 weeks in 1 location'],c:1,e:`3-2-1 backup rule: 3 total copies, 2 different storage media types, 1 offsite (or air-gapped/immutable). Modern "3-2-1-1-0": adds 1 immutable copy and 0 backup errors verified. Protects against ransomware, disasters, hardware failure.`},
+{d:3,t:['cold_warm_hot_site','dr'],q:`A disaster recovery site that has full equipment, data, and is kept synchronized with production for near-instant failover is a:`,o:['Cold site','Warm site','Hot site','Mobile site'],c:2,e:`Cold site: facility only (longest RTO, cheapest). Warm site: equipment + some data (days to activate). Hot site: fully operational, synced (minutes to activate, most expensive). Cloud DR (DRaaS) often replaces traditional sites.`},
+{d:3,t:['wireless','wpa3_enterprise'],q:`In enterprise wireless security, WPA2-Enterprise and WPA3-Enterprise use which component to authenticate users?`,o:['Pre-shared key (PSK)','Captive portal','RADIUS server with EAP','WEP key'],c:2,e:`Enterprise Wi-Fi uses 802.1X with EAP (Extensible Authentication Protocol) methods via RADIUS. EAP-TLS (mutual cert-based, most secure), PEAP (server cert + user creds), EAP-TTLS. Personal mode uses PSK.`},
+{d:3,t:['wireless','rogue_detection'],q:`A wireless IDS/IPS (WIDS/WIPS) is deployed to detect:`,o:['SQL injection attempts','Rogue access points, evil twins, deauth attacks, and unauthorized clients','TLS handshake errors','Network bandwidth usage'],c:1,e:`WIPS monitors RF spectrum for unauthorized APs, evil twins, deauth attacks, bluesnarfing, etc. Can automatically contain rogue APs (may have legal implications). Required for PCI DSS in retail.`},
+{d:3,t:['mobile','mdm'],q:`A system that manages corporate mobile devices, enforcing policies (encryption, passcode), enabling remote wipe, and distributing apps is:`,o:['EDR','MDM (Mobile Device Management) / UEM','DLP','SIEM'],c:1,e:`MDM (Intune, Jamf, VMware Workspace ONE) manages mobile devices. UEM (Unified Endpoint Management) extends to laptops, desktops, IoT. Features: config profiles, app management, compliance, conditional access.`},
+{d:3,t:['mobile','byod_cope'],q:`A mobile device deployment model where the company owns the device but allows limited personal use is:`,o:['BYOD','COPE (Corporate-Owned, Personally Enabled)','CYOD','Choose Your Own Device'],c:1,e:`Deployment models: BYOD (personal device, company data), COPE (company device, personal use allowed), COBO (company owned, business only), CYOD (choose from approved list). Each has different control/privacy trade-offs.`},
+{d:3,t:['mobile','containerization'],q:`A technology that separates corporate apps and data from personal apps on a BYOD device, enabling selective wipe of only corporate content, is:`,o:['Jailbreaking','App containerization / work profile','Full wipe','Root access'],c:1,e:`Containerization (iOS Managed Apps, Android Work Profile) separates corporate and personal spaces. Allows wipe of corporate only — critical for BYOD. Employee privacy preserved for personal data.`},
+{d:3,t:['database','encryption'],q:`A database feature that transparently encrypts data at the storage level without application changes is:`,o:['Application-level encryption','TDE (Transparent Data Encryption)','Column-level hashing','Format-preserving encryption'],c:1,e:`TDE (SQL Server, Oracle, Azure SQL) encrypts database files at rest transparently. Simple to deploy. Limitation: doesn\\'t protect against compromised DBA or SQL injection. Column-level encryption and Always Encrypted provide finer-grained control.`},
+{d:3,t:['database','tokenization'],q:`Replacing sensitive data (credit card number) with a non-sensitive placeholder that can be reversed only through a secure tokenization system is called:`,o:['Encryption','Hashing','Tokenization','Masking'],c:2,e:`Tokenization stores sensitive data in a secure token vault, returning a token. Original data retrievable only via vault. Reduces PCI scope — tokenized data not in scope. Used for PAN, PII protection.`},
+{d:3,t:['database','masking'],q:`Showing "XXXX-XXXX-XXXX-1234" instead of a full credit card in a report is an example of:`,o:['Encryption','Hashing','Data masking','Tokenization'],c:2,e:`Data masking obscures sensitive data for display/non-production use. Static (permanent replacement for test data), dynamic (real-time at query). Preserves format, reduces exposure risk without losing data usefulness for testing.`},
+{d:3,t:['application_security','sdlc'],q:`The practice of integrating security throughout every phase of software development (design, code, test, deploy) is called:`,o:['Waterfall development','DevSecOps / Secure SDLC','Agile development','Kanban'],c:1,e:`DevSecOps shifts security "left" — integrated from design. Activities: threat modeling (design), SAST (code), SCA (dependencies), DAST (testing), IaC scanning, container scanning, runtime protection. "Shift left" prevents late-stage vulns.`},
+{d:3,t:['application_security','sast_dast'],q:`A security testing method that analyzes source code WITHOUT executing it to find vulnerabilities is:`,o:['DAST','SAST (Static Application Security Testing)','IAST','Penetration testing'],c:1,e:`SAST (SonarQube, Checkmarx, Fortify, Semgrep) analyzes code statically — finds vulnerabilities like SQLi, XSS, hardcoded secrets without running code. Fast, CI/CD friendly, but more false positives. DAST tests running apps (like a pen test).`},
+{d:3,t:['application_security','sca'],q:`A tool that scans application dependencies (npm, Maven, pip packages) for known vulnerabilities (CVEs) is called:`,o:['SAST','DAST','SCA (Software Composition Analysis)','Fuzzing'],c:2,e:`SCA (Snyk, Dependabot, OWASP Dependency-Check, Mend) inventories and checks dependencies against vulnerability databases. Critical after Log4Shell. Generate SBOMs. Integrate in CI/CD to block vulnerable deps.`},
+{d:3,t:['application_security','fuzzing'],q:`A testing technique that sends unexpected, random, or malformed inputs to find crashes, memory errors, or other bugs is:`,o:['Regression testing','Fuzzing / fuzz testing','Penetration testing','Unit testing'],c:1,e:`Fuzzing (AFL, libFuzzer, Peach) discovers vulnerabilities by feeding random/malformed inputs. Used for file parsers, protocol handlers, crypto. Google OSS-Fuzz finds 100s of bugs in OSS monthly. Dumb vs smart (structure-aware) fuzzing.`},
+{d:3,t:['application_security','input_validation'],q:`The FIRST line of defense against injection attacks (SQLi, XSS, command injection) in applications is:`,o:['Web Application Firewall','Input validation and output encoding','Antivirus','Host firewall'],c:1,e:`Never trust input. Validate on server (allowlist preferred over blocklist), encode output appropriately for context (HTML, JS, URL, SQL). Use parameterized queries/prepared statements for DB. Defense in depth: also use WAF as safety net.`},
+{d:3,t:['api_security','authentication'],q:`Modern REST APIs commonly use which token format for stateless authentication?`,o:['Kerberos tickets','JWT (JSON Web Tokens)','SAML assertions','Session cookies'],c:1,e:`JWTs are base64-encoded JSON with signature — self-contained auth tokens. Claims in payload (user ID, exp, etc.). Signed with HMAC or RSA/ECDSA. Stateless — server doesn\\'t store sessions. Store securely (not localStorage); short expiration; refresh tokens pattern.`},
+{d:3,t:['api_security','rate_limiting'],q:`An API control that limits how many requests a client can make in a given time to prevent abuse, credential stuffing, and resource exhaustion is:`,o:['Authentication','Authorization','Rate limiting / throttling','Encryption'],c:2,e:`Rate limiting (tokens/sec, per IP/user/API key). Critical for auth endpoints, expensive operations. Algorithms: token bucket, leaky bucket, fixed/sliding window. API gateways (Kong, AWS API Gateway) implement.`},
+{d:3,t:['api_security','gateway'],q:`A central entry point for API traffic that handles authentication, rate limiting, routing, and analytics is an:`,o:['API gateway','Reverse proxy','Load balancer','CDN'],c:0,e:`API gateways (AWS API Gateway, Kong, Apigee, Tyk) manage API traffic: auth, rate limiting, request/response transformation, routing, monitoring, caching. Critical in microservice architectures. Modern service meshes (Istio) handle internal API traffic.`},
+{d:3,t:['iot','segmentation'],q:`The BEST security practice for deploying IoT devices in an enterprise is:`,o:['Give them full internet access for updates','Isolate them on a dedicated VLAN with restricted access to other networks','Install antivirus on each device','Configure with default credentials'],c:1,e:`IoT segmentation: dedicated VLAN, strict firewall rules, no direct internet, disable UPnP, change defaults, monitor traffic baselines. Many IoT devices cannot be patched or have weak security — isolate to contain compromise.`},
+{d:3,t:['physical_security','mantrap'],q:`A physical security control consisting of two doors where the second cannot open until the first closes, preventing tailgating, is a:`,o:['Turnstile','Mantrap / access control vestibule','Bollard','Revolving door'],c:1,e:`Mantraps (modern term: access control vestibules) prevent piggybacking by enclosing one person at a time. Often combined with badge/biometric authentication. Used for sensitive areas: data centers, SCIFs.`},
+{d:3,t:['physical_security','fire_suppression'],q:`A fire suppression system suitable for data centers that uses gas (not water) to protect electronic equipment is:`,o:['Wet pipe sprinkler','Dry pipe sprinkler','Gas-based (FM-200, Novec 1230, inert gas)','Chemical foam'],c:2,e:`Gas-based suppression (FM-200, Novec 1230, inert gases) puts out fires without damaging electronics. Halon was banned (ozone depleting). Modern systems are environmentally friendly and safe for occupied spaces.`},
+{d:3,t:['physical_security','tempest'],q:`A set of standards for shielding equipment from emitting electromagnetic signals that could be intercepted to reveal processed data is:`,o:['TEMPEST','HIPAA','NIST 800-53','FIPS 140'],c:0,e:`TEMPEST = NSA standards for preventing electromagnetic emanations from revealing information. Includes Faraday cages, shielded rooms, filtered power. Primarily for classified/government environments.`},
+{d:3,t:['honey_tech','honeytoken'],q:`Fake credentials, records, or files placed in a system to detect unauthorized access — access to them alerts defenders — are called:`,o:['Honeypots','Honeytokens / canary tokens','Decoys','Lures'],c:1,e:`Honeytokens (e.g., Canarytokens.org) are fake assets that trigger alerts when accessed — fake AWS credentials, database records, documents. Low-cost, high-signal detection. Indicate breach or insider activity.`},
+{d:3,t:['honey_tech','deception'],q:`An entire fake network environment deployed to engage attackers, waste their time, and gather intelligence on their techniques is a:`,o:['Honeypot','Honeynet','Sandbox','DMZ'],c:1,e:`Honeynets are networks of honeypots — simulate complete environments. Attackers interact extensively, revealing TTPs. Modern deception platforms (Attivo, Illusive, TrapX) deploy at scale. Part of zero trust and active defense strategies.`},
+{d:3,t:['resilience','snapshot'],q:`A read-only copy of a virtual machine or storage volume at a specific point in time, useful for quick rollback is:`,o:['Snapshot','Backup','Clone','Template'],c:0,e:`Snapshots are point-in-time copies (copy-on-write). Fast creation/reversion. NOT a backup — stored on same storage; lost if storage fails. Use snapshots for short-term rollback, backups for disaster recovery.`},
+{d:3,t:['resilience','immutable_infra'],q:`An infrastructure approach where servers are never modified after deployment — any change requires deploying new instances — is called:`,o:['Mutable infrastructure','Immutable infrastructure','Manual configuration','Snowflake servers'],c:1,e:`Immutable infrastructure (Docker, AWS AMIs, Kubernetes) improves security/reliability. No config drift, no long-lived credentials, easier rollback, predictable. Opposite of "pet" servers — cattle, not pets. IaC essential.`},
+{d:3,t:['resilience','chaos_engineering'],q:`Deliberately injecting failures into production systems to verify resilience and recovery procedures is called:`,o:['Penetration testing','Chaos engineering','Load testing','Performance testing'],c:1,e:`Chaos engineering (Netflix Chaos Monkey, Gremlin) tests resilience by killing instances, degrading networks, filling disks. Validates failover, monitoring, and incident response. Game days practice the full response.`},
+{d:3,t:['resilience','dr_bcp'],q:`Which document specifies technical procedures to recover IT systems after a disaster (RTO/RPO, recovery steps, staff roles)?`,o:['Business Continuity Plan (BCP)','Disaster Recovery Plan (DRP)','Incident Response Plan','Security Policy'],c:1,e:`DRP focuses on IT system recovery — detailed technical procedures. BCP is broader — keeps business operating during/after a disruption (people, processes, facilities, IT). DR is a subset of BC.`},
+{d:3,t:['network_protocols','dns_over_https'],q:`Which technology encrypts DNS queries between client and resolver, preventing eavesdropping and manipulation?`,o:['DNSSEC','DoH (DNS over HTTPS) / DoT','DNS-over-UDP','DHCP'],c:1,e:`DoH/DoT encrypt DNS queries (historically cleartext on port 53). DNSSEC validates authenticity/integrity (signed records) but doesn\\'t encrypt. They\\'re complementary. Can be controversial in enterprises (breaks visibility) — managed DNS with monitoring preferred.`},
+{d:3,t:['network_protocols','snmp_versions'],q:`Which version of SNMP provides authentication and encryption, unlike earlier versions that transmit community strings in plaintext?`,o:['SNMPv1','SNMPv2c','SNMPv3','SNMPv4'],c:2,e:`SNMPv1/v2c send community strings in plaintext (often default "public"/"private"). SNMPv3 adds authentication (MD5/SHA) and encryption (DES/AES). Always use v3 and restrict SNMP access (management VLAN).`},
+{d:3,t:['network_protocols','secure_email'],q:`Which protocols provide end-to-end email authentication, integrity, and encryption?`,o:['SMTP and POP3','S/MIME and PGP/GPG','FTP and TFTP','HTTP and HTTPS'],c:1,e:`S/MIME (X.509 certs) and PGP/GPG (web of trust) provide E2E encryption and signing for email. Different trust models, mostly incompatible. TLS (opportunistic/enforced) protects email in transit between servers.`},
+{d:3,t:['network_protocols','email_auth'],q:`Which three email authentication standards together combat spoofing and phishing by verifying senders?`,o:['SPF, DKIM, DMARC','SSL, TLS, HTTPS','POP3, IMAP, SMTP','SAML, OAuth, OIDC'],c:0,e:`SPF: specifies authorized sending IPs per domain. DKIM: signs messages cryptographically. DMARC: policy for handling failures (reject/quarantine/none) + reporting. All three required for effective anti-spoofing.`},
+{d:3,t:['hardening','baseline'],q:`A documented secure configuration standard (e.g., CIS Benchmarks) for a specific system type that defines the minimum security posture is a:`,o:['Runbook','Security baseline','Change request','Playbook'],c:1,e:`Security baselines define minimum configurations. Sources: CIS Benchmarks, DISA STIGs, vendor guides, NIST. Tools for auditing: Lynis, OpenSCAP, Chef InSpec, Ansible with compliance playbooks. Variance requires exception approval.`},
+{d:3,t:['hardening','ports_services'],q:`The FIRST step in system hardening should be:`,o:['Install antivirus','Disable unnecessary services, close unneeded ports, and remove default accounts','Set up remote desktop','Configure firewall exceptions'],c:1,e:`Reduce attack surface — fewer running services and open ports = fewer attack vectors. Review with `ss -tulpn` / `netstat -an`. Also: remove unused software, disable legacy protocols (SMBv1, Telnet), change default accounts.`},
+];
+
+// ═══════════════════════════════════════════════════════
+// SECURITY+ SY0-701 — MASTER QUESTION BANK (500+)
+// Format: d=domain, t=topics[], q=question, o=options[], c=correctIdx, e=explanation
+// Types: type='mcq' (default), 'drag', 'order'
+// ═══════════════════════════════════════════════════════
+
+// Append to global BANK in main file
+if (typeof BANK !== 'undefined') BANK.push(...BANK_PART_1);
+
+// ═══════════════════════════════════════════════════════
+// TOPIC METADATA — used for post-exam analysis
+// ═══════════════════════════════════════════════════════
+const TOPIC_META = {};
+</script>
+</body>
+</html>

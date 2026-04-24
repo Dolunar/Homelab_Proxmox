@@ -246,38 +246,4 @@ systemctl restart networking
 
 Ensuite dans l'interface de ta box (tape `192.168.1.1` sur ton navigateur) cherche **NAT / Redirection de ports / Port Forwarding** et ajoute les règles du tableau ci-dessus.
 
----
-
-## Étape 7 — Nom de domaine + SSL
-
-**Tu as un nom de domaine ?** Si non, tu peux en acheter un pour ~10€/an chez OVH ou Namecheap.
-
-Une fois que tu as ton domaine, dans la gestion DNS de ton registrar :
-
-```
-Type  : A
-Nom   : @
-Valeur: TON_IP_PUBLIQUE   ← cherche "mon ip" sur Google
-```
-
-```
-Type  : A
-Nom   : www
-Valeur: TON_IP_PUBLIQUE
-```
-
-La propagation DNS prend 5 minutes à 24h.
-
-**Ensuite, SSL gratuit avec Certbot :**
-
-```bash
-# Installer Certbot
-apt install certbot python3-certbot-nginx -y
-
-# Générer le certificat (remplace avec ton vrai domaine)
-certbot --nginx -d mondomaine.com -d www.mondomaine.com
-
-# Certbot configure HTTPS automatiquement et renouvelle seul
-```
-
-Ton site est maintenant accessible en **HTTPS** avec le cadenas vert. ✅
+Tunnel ID Cloudflare : id 6caf3b1d-d688-4057-8d01-175e45867bd6
